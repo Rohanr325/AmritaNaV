@@ -190,26 +190,27 @@ const FLOORS_DATA = {
   'wp_gad_pr':               { id: 'wp_gad_pr',               x: 374, y: 810, label: 'GAD - PR Office Walkway' },
   'wp_entrance':             { id: 'wp_entrance',             x: 374, y: 861, label: 'Main Entrance Porch' },
 
-    // Outdoor Roadway Loop (Matching user orange line)
+    // Outdoor Roadway Loop
   'wp_outdoor_north_drive':     { id: 'wp_outdoor_north_drive',     x: 376, y: 50,  label: 'North Outer Driveway' },
-  'wp_outdoor_north_corner':    { id: 'wp_outdoor_north_corner',    x: 645, y: 50,  label: 'North Driveway East Corner' },
+  'wp_outdoor_north_corner':    { id: 'wp_outdoor_north_corner',    x: 570, y: 50,  label: 'North Driveway East Corner' },
+  'wp_outdoor_ne_bend1':        { id: 'wp_outdoor_ne_bend1',        x: 615, y: 90,  label: 'Northeast Outer Roadway Bend 1' },
+  'wp_outdoor_ne_bend2':        { id: 'wp_outdoor_ne_bend2',        x: 645, y: 120, label: 'Northeast Outer Roadway Bend 2' },
   'wp_outdoor_east_edge_upper': { id: 'wp_outdoor_east_edge_upper', x: 645, y: 230, label: 'East Perimeter Roadway (North)' },
   'wp_outdoor_east_mid':        { id: 'wp_outdoor_east_mid',        x: 645, y: 380, label: 'East Perimeter Roadway (Mid)' },
   'wp_outdoor_east_lower':      { id: 'wp_outdoor_east_lower',      x: 645, y: 508, label: 'East Perimeter Roadway (Lower)' },
-  'wp_outdoor_east_se_junc':    { id: 'wp_outdoor_east_se_junc',    x: 645, y: 596, label: 'East Roadway & Acharya North Junction' },
-  'wp_outdoor_east_acharya':    { id: 'wp_outdoor_east_acharya',    x: 645, y: 710, label: 'East Perimeter Roadway (Acharya)' },
+  'wp_outdoor_east_se_junc':    { id: 'wp_outdoor_east_se_junc',    x: 645, y: 636, label: 'East Roadway & Mfg Breezeway Junction' },
   'wp_outdoor_se_corner':       { id: 'wp_outdoor_se_corner',       x: 645, y: 861, label: 'Southeast Campus Roadway Corner' },
-  'wp_outdoor_s004a_east':      { id: 'wp_outdoor_s004a_east',      x: 518, y: 596, label: 'South Breezeway East (outside S-004A)' },
-  'wp_outdoor_breezeway_east':  { id: 'wp_outdoor_breezeway_east',  x: 464, y: 650, label: 'Acharya North Breezeway Diagonal Hub' },
-  'wp_outdoor_s001_west':       { id: 'wp_outdoor_s001_west',       x: 404, y: 650, label: 'South Spine Corridor Connector (S-001)' },
+  'wp_outdoor_s004a_east':      { id: 'wp_outdoor_s004a_east',      x: 530, y: 636, label: 'South Breezeway East (outside S-004A)' },
+  'wp_outdoor_breezeway_east':  { id: 'wp_outdoor_breezeway_east',  x: 464, y: 636, label: 'Mfg South Breezeway Junction' },
   'wp_outdoor_south_east':      { id: 'wp_outdoor_south_east',      x: 460, y: 861, label: 'South Perimeter Roadway East' },
   'wp_outdoor_south_west':      { id: 'wp_outdoor_south_west',      x: 250, y: 861, label: 'South Perimeter Roadway West' },
-  'wp_outdoor_sw_corner':       { id: 'wp_outdoor_sw_corner',       x: 140, y: 861, label: 'Southwest Campus Roadway Corner' },
-  'wp_outdoor_west_amri':       { id: 'wp_outdoor_west_amri',       x: 140, y: 676, label: 'West Roadway (outside Amritheswari)' },
-  'wp_outdoor_amri_top_corner': { id: 'wp_outdoor_amri_top_corner', x: 140, y: 588, label: 'Amritheswari Northwest Roadway Corner' },
-  'wp_outdoor_amri_north_door': { id: 'wp_outdoor_amri_north_door', x: 232, y: 588, label: 'Amritheswari North Lightwell Connector' },
-  'wp_outdoor_sw_breezeway_corner': { id: 'wp_outdoor_sw_breezeway_corner', x: 290, y: 588, label: 'West Courtyard Breezeway Corner' },
-  'wp_outdoor_sw_north_junc':   { id: 'wp_outdoor_sw_north_junc',   x: 290, y: 440, label: 'West Labs North Breezeway Junction' }
+  'wp_outdoor_sw_corner':       { id: 'wp_outdoor_sw_corner',       x: 76,  y: 861, label: 'Southwest Campus Roadway Corner' },
+  'wp_outdoor_west_amri':       { id: 'wp_outdoor_west_amri',       x: 76,  y: 676, label: 'West Roadway (outside Amritheswari)' },
+  'wp_outdoor_west_breezeway':  { id: 'wp_outdoor_west_breezeway',  x: 232, y: 600, label: 'West Courtyard Breezeway Entry' },
+  'wp_outdoor_amri_top':        { id: 'wp_outdoor_amri_top',        x: 220, y: 636, label: 'Amritheswari North Lightwell' },
+  'wp_outdoor_sw_cross_junc':   { id: 'wp_outdoor_sw_cross_junc',   x: 76,  y: 508, label: 'West Courtyard & Cross Walkway Crossing' },
+  'wp_outdoor_mid_west_bend1':  { id: 'wp_outdoor_mid_west_bend1',  x: 76,  y: 440, label: 'West Courtyard Walkway Mid' },
+  'wp_outdoor_mid_west_bend2':  { id: 'wp_outdoor_mid_west_bend2',  x: 121, y: 398, label: 'Metallurgy Lab South Outer Access' }
     },
     edges: [
 // West Spine Veranda Corridor (along N-Block rooms)
@@ -247,8 +248,7 @@ const FLOORS_DATA = {
   ['wp_west_spine_top', 'wp_east_spine_top', 'indoor'],
   ['wp_north_exit_hub', 'wp_west_spine_top', 'indoor'],
   ['wp_north_exit_hub', 'wp_east_spine_top', 'indoor'],
-  ['wp_west_upper_branch', 'wp_east_upper_branch', 'indoor'],
-  ['wp_west_hr', 'wp_east_arts_prin', 'indoor'],
+  ['wp_west_mid_bridge', 'wp_east_mid_bridge', 'indoor'],
   ['wp_west_lower_bridge', 'wp_east_lower_bridge', 'indoor'],
 
   // Upper West Wing Branch (WC-N2 and N-014..N-017)
@@ -324,43 +324,33 @@ const FLOORS_DATA = {
   ['wp_gad_pr', 'wp_entrance', 'indoor'],
 
     // White line pathway along East side of Amritheswari Hall:
-  ['wp_admin_white_path', 'wp_outdoor_amri_north_door', 'indoor'],
+  ['wp_admin_white_path', 'wp_outdoor_west_breezeway', 'indoor'],
 
-  // Outdoor Roadway Loop (Matching user orange line)
+  // Outdoor Roadway Loop
   ['wp_north_exit_hub', 'wp_outdoor_north_drive', 'outdoor'],
   ['wp_outdoor_north_drive', 'wp_outdoor_north_corner', 'outdoor'],
-  ['wp_outdoor_north_corner', 'wp_outdoor_east_edge_upper', 'outdoor'],
+  ['wp_outdoor_north_corner', 'wp_outdoor_ne_bend1', 'outdoor'],
+  ['wp_outdoor_ne_bend1', 'wp_outdoor_ne_bend2', 'outdoor'],
+  ['wp_outdoor_ne_bend2', 'wp_outdoor_east_edge_upper', 'outdoor'],
   ['wp_outdoor_east_edge_upper', 'wp_outdoor_east_mid', 'outdoor'],
   ['wp_outdoor_east_mid', 'wp_outdoor_east_lower', 'outdoor'],
   ['wp_outdoor_east_lower', 'wp_outdoor_east_se_junc', 'outdoor'],
-  ['wp_outdoor_east_se_junc', 'wp_outdoor_east_acharya', 'outdoor'],
-  ['wp_outdoor_east_acharya', 'wp_outdoor_se_corner', 'outdoor'],
-
-  // East breezeway diagonal branch into building (S-004A / Acharya to S-001)
+  ['wp_outdoor_se_corner', 'wp_outdoor_south_east', 'outdoor'],
   ['wp_outdoor_east_se_junc', 'wp_outdoor_s004a_east', 'outdoor'],
-  ['wp_outdoor_s004a_east', 'wp_se_research_cell', 'indoor'],
-  ['wp_outdoor_s004a_east', 'wp_admin_acharya_path', 'indoor'],
   ['wp_outdoor_s004a_east', 'wp_outdoor_breezeway_east', 'outdoor'],
-  ['wp_outdoor_breezeway_east', 'wp_outdoor_s001_west', 'outdoor'],
-  ['wp_outdoor_s001_west', 'wp_east_guest', 'indoor'],
-  ['wp_outdoor_s001_west', 'wp_east_south_junc', 'indoor'],
-
-  // South perimeter roadway
+  ['wp_outdoor_breezeway_east', 'wp_se_research_cell', 'outdoor'],
+  ['wp_outdoor_breezeway_east', 'wp_admin_east_st', 'outdoor'],
   ['wp_outdoor_se_corner', 'wp_outdoor_south_east', 'outdoor'],
   ['wp_outdoor_south_east', 'wp_entrance', 'outdoor'],
   ['wp_entrance', 'wp_outdoor_south_west', 'outdoor'],
   ['wp_outdoor_south_west', 'wp_outdoor_sw_corner', 'outdoor'],
-
-  // West perimeter roadway (outside Amritheswari Hall)
   ['wp_outdoor_sw_corner', 'wp_outdoor_west_amri', 'outdoor'],
-  ['wp_outdoor_west_amri', 'wp_outdoor_amri_top_corner', 'outdoor'],
-
-  // West inner connector (between A-006 & N-005, then north to Metallurgy Lab N-014)
-  ['wp_outdoor_amri_top_corner', 'wp_outdoor_amri_north_door', 'outdoor'],
-  ['wp_outdoor_amri_north_door', 'wp_outdoor_sw_breezeway_corner', 'outdoor'],
-  ['wp_outdoor_sw_breezeway_corner', 'wp_sw_cross', 'outdoor'],
-  ['wp_sw_cross', 'wp_outdoor_sw_north_junc', 'outdoor'],
-  ['wp_outdoor_sw_north_junc', 'wp_nw_lab_metallurgy', 'outdoor']
+  ['wp_outdoor_west_amri', 'wp_outdoor_west_breezeway', 'outdoor'],
+  ['wp_outdoor_west_breezeway', 'wp_outdoor_amri_top', 'outdoor'],
+  ['wp_outdoor_west_amri', 'wp_outdoor_sw_cross_junc', 'outdoor'],
+  ['wp_outdoor_sw_cross_junc', 'wp_outdoor_mid_west_bend1', 'outdoor'],
+  ['wp_outdoor_mid_west_bend1', 'wp_outdoor_mid_west_bend2', 'outdoor'],
+  ['wp_outdoor_mid_west_bend2', 'wp_nw_lab_metallurgy', 'outdoor']
     ],
     stairs: [
       { x: 368, y: 491, w: 14, h: 16, steps: 5, dir: 'h' }, // Central Mid-Bridge
@@ -401,11 +391,10 @@ const FLOORS_DATA = {
 
     <!-- Connecting Bridges between Wings -->
     <rect class="building-wing" x="346" y="156" width="60" height="26" />
-    <rect class="building-wing" x="216" y="266" width="310" height="10" />
-    <rect class="building-wing" x="216" y="340" width="134" height="10" />
-    <rect class="building-wing" x="404" y="340" width="122" height="10" />
-    <rect class="building-wing" x="346" y="393" width="58" height="10" />
-    <rect class="building-wing" x="256" y="503" width="270" height="10" />
+    <rect class="building-wing" x="216" y="266" width="134" height="10" />
+    <rect class="building-wing" x="216" y="340" width="310" height="10" />
+    <rect class="building-wing" x="256" y="503" width="94" height="10" />
+    <rect class="building-wing" x="404" y="503" width="62" height="10" />
     `,
     courtyardsHtml: `
 <!-- 1) Grand Central Courtyard - Upper Atrium -->
@@ -446,10 +435,6 @@ const FLOORS_DATA = {
     <!-- 7) Patios Flanking Lower Wings -->
     <rect class="courtyard-patio" x="168" y="744" width="92" height="42" rx="2" />
     <rect class="courtyard-patio" x="484" y="744" width="98" height="42" rx="2" />
-
-    <!-- 8) SW Labs Inner Courtyard / Open Patio -->
-    <rect class="courtyard-patio" x="148" y="496" width="110" height="26" rx="2" />
-    <text x="203" y="511" text-anchor="middle" font-size="5" fill="rgba(16, 185, 129, 0.6)" font-weight="600" letter-spacing="1">COURTYARD</text>
     `,
     corridorsHtml: `
 <!-- Admin Transverse Grand Cross Corridor (Single clean pathway above green line at y=696) -->
@@ -476,21 +461,13 @@ const FLOORS_DATA = {
     <rect class="corridor-floor" x="346" y="162" width="59" height="16" rx="1" />
     <line class="corridor-centerline" x1="350" y1="170" x2="404" y2="170" />
 
-    <!-- Transverse Upper Cross Passage (WC-N2 across Atrium to WC-S2 - Top orange line) -->
-    <rect class="corridor-floor" x="216" y="266" width="310" height="10" rx="1" />
-    <line class="corridor-centerline" x1="221" y1="271" x2="523" y2="271" />
+    <!-- Upper NW Connector Bridge (White line 1 in user image) -->
+    <rect class="corridor-floor" x="216" y="266" width="134" height="10" rx="1" />
+    <line class="corridor-centerline" x1="221" y1="271" x2="350" y2="271" />
 
-    <!-- West Mid Cross Passage (NW Labs to West Spine) -->
-    <rect class="corridor-floor" x="216" y="340" width="134" height="10" rx="1" />
-    <line class="corridor-centerline" x1="221" y1="345" x2="350" y2="345" />
-
-    <!-- East Mid Cross Passage (East Spine to NE Workshops) -->
-    <rect class="corridor-floor" x="404" y="340" width="122" height="10" rx="1" />
-    <line class="corridor-centerline" x1="404" y1="345" x2="523" y2="345" />
-
-    <!-- Mid Cross Bridge across Open Atrium (Middle orange line: N-012 HR to S-008 Principal Arts) -->
-    <rect class="corridor-floor" x="350" y="393" width="54" height="10" rx="1" />
-    <line class="corridor-centerline" x1="350" y1="398" x2="404" y2="398" />
+    <!-- Transverse Mid Cross Passage (White line 2 in user image - full straight across) -->
+    <rect class="corridor-floor" x="216" y="340" width="310" height="10" rx="1" />
+    <line class="corridor-centerline" x1="221" y1="345" x2="523" y2="345" />
 
 
 
@@ -506,28 +483,17 @@ const FLOORS_DATA = {
     <rect class="corridor-floor" x="518" y="444" width="10" height="130" rx="1" />
     <line class="corridor-centerline" x1="523" y1="444" x2="523" y2="574" />
 
-    <!-- SW Labs 2-Way Loop Corridor (North & South walkways along yellow lines) -->
-    <!-- North Walkway along N-007, N-008, N-009 -->
-    <rect class="corridor-floor" x="140" y="488" width="126" height="8" rx="1" />
-    <line class="corridor-centerline" x1="144" y1="492" x2="262" y2="492" />
+    <!-- Lower West Labs Corridor -->
+    <rect class="corridor-floor" x="130" y="504" width="132" height="8" rx="1" />
+    <line class="corridor-centerline" x1="130" y1="508" x2="262" y2="508" />
 
-    <!-- South Walkway along N-005, N-004 -->
-    <rect class="corridor-floor" x="140" y="522" width="126" height="8" rx="1" />
-    <line class="corridor-centerline" x1="144" y1="526" x2="262" y2="526" />
+    <!-- Lower West Indoor Connector Bridge (Blue line) -->
+    <rect class="corridor-floor" x="256" y="503" width="94" height="10" rx="1" />
+    <line class="corridor-centerline" x1="262" y1="508" x2="350" y2="508" />
 
-    <!-- West Walkway & Restroom Vestibule -->
-    <rect class="corridor-floor" x="140" y="488" width="8" height="42" rx="1" />
-    <line class="corridor-centerline" x1="144" y1="492" x2="144" y2="526" />
-    <rect class="corridor-floor" x="130" y="504" width="14" height="8" rx="1" />
-    <line class="corridor-centerline" x1="130" y1="508" x2="144" y2="508" />
-
-    <!-- East Walkway to Cross Passage -->
-    <rect class="corridor-floor" x="258" y="488" width="8" height="42" rx="1" />
-    <line class="corridor-centerline" x1="262" y1="492" x2="262" y2="526" />
-
-    <!-- Transverse Lower Cross Passage (Bottom orange line - SW Labs across courtyard to S-MFG) -->
-    <rect class="corridor-floor" x="258" y="503" width="268" height="10" rx="1" />
-    <line class="corridor-centerline" x1="262" y1="508" x2="523" y2="508" />
+    <!-- Lower East Indoor Connector Bridge (Blue line) -->
+    <rect class="corridor-floor" x="404" y="503" width="62" height="10" rx="1" />
+    <line class="corridor-centerline" x1="404" y1="508" x2="523" y2="508" />
 
     <!-- Main Entrance & Reception Foyer -->
     <rect class="corridor-floor" x="368" y="846" width="12" height="15" rx="1" />
@@ -905,15 +871,6 @@ const FLOORS_DATA = {
     <rect class="courtyard-patio" x="148" y="496" width="110" height="26" rx="2" />
     <text x="203" y="511" text-anchor="middle" font-size="5" fill="rgba(16, 185, 129, 0.6)" font-weight="600" letter-spacing="1">COURTYARD</text>
 
-    <!-- 8) Admin Block 2nd Fl Light Wells (Flanking A207 as in blueprint) -->
-    <rect class="lightwell-gap" x="300" y="752" width="26" height="32" rx="1" />
-    <rect class="lightwell-gap" x="422" y="752" width="26" height="32" rx="1" />
-
-    <!-- 9) Front Entrance Terrace Roof (X-Box below A207 as in blueprint) -->
-    <rect class="lightwell-gap" x="334" y="810" width="80" height="34" rx="2" />
-    <line x1="334" y1="810" x2="414" y2="844" stroke="rgba(56, 189, 248, 0.35)" stroke-width="0.8" />
-    <line x1="334" y1="844" x2="414" y2="810" stroke="rgba(56, 189, 248, 0.35)" stroke-width="0.8" />
-    <text x="374" y="855" text-anchor="middle" font-size="5" fill="rgba(148, 163, 184, 0.6)" font-weight="600" letter-spacing="1">TERRACE</text>
     `,
     corridorsHtml: `
 
@@ -1004,9 +961,9 @@ let GRAPH = FLOORS_DATA[0].graph;
 
 // Shared vertical staircases linking Ground Floor (0) and Second Floor (2)
 const SHARED_STAIRS = [
-  { id: 'stair_admin_w', name: 'Admin West Staircase', f0Node: 'wp_admin_west_st', f2Node: 'wp_f2_stair_admin_w' },
-  { id: 'stair_admin_e', name: 'Admin East Staircase', f0Node: 'wp_admin_east_st', f2Node: 'wp_f2_stair_admin_e' },
-  { id: 'stair_mid', name: 'Central Mid-Bridge Stairs', f0Node: 'wp_west_lower_bridge', f2Node: 'wp_f2_mid_stair' },
+  { id: 'stair_admin_w', name: 'Admin West Staircase', f0Node: 'wp_admin_w_stairs', f2Node: 'wp_f2_stair_admin_w' },
+  { id: 'stair_admin_e', name: 'Admin East Staircase', f0Node: 'wp_admin_e_stairs', f2Node: 'wp_f2_stair_admin_e' },
+  { id: 'stair_mid', name: 'Central Mid-Bridge Stairs', f0Node: 'wp_mid_bridge_stairs', f2Node: 'wp_f2_mid_stair' },
   { id: 'stair_north', name: 'North Stairs', f0Node: 'wp_north_exit_hub', f2Node: 'wp_f2_north_stair' }
 ];
 
@@ -1453,19 +1410,11 @@ function renderFloor(floorId) {
   if (roomsGroup) {
     let roomsHtml = '';
     fData.rooms.forEach(r => {
-      const isNarrowVertical = r.w < 26 && r.h >= 36;
-      const showName = r.h >= 24 && r.w >= 36 && !isNarrowVertical;
+      const showName = r.h >= 24 && r.w >= 36;
       const isSmall = r.w < 42 || r.h < 26;
-      let codeY = showName ? (r.cy - 3) : r.cy + 3;
+      const codeY = showName ? (r.cy - 3) : r.cy + 3;
       const nameY = r.cy + 9;
-      let fontSize = (r.w < 30) ? '5.5px' : (isSmall ? '7px' : '8.5px');
-      let transformAttr = '';
-
-      if (isNarrowVertical) {
-        transformAttr = `transform="rotate(-90 ${r.cx} ${r.cy})"`;
-        codeY = r.cy + 2;
-        fontSize = '5px';
-      }
+      const fontSize = (r.w < 30) ? '6px' : (isSmall ? '7px' : '8.5px');
 
       let displayName = r.name;
       if (r.w < 42 && displayName.length > 10) {
@@ -1477,7 +1426,7 @@ function renderFloor(floorId) {
       roomsHtml += `
         <g class="room-group" id="room-${r.id}" data-id="${r.id}" data-category="${r.category}" tabindex="0" role="button" aria-label="${r.code} - ${r.name}">
           <rect class="room-rect" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="2" />
-          <text class="room-code-text" x="${r.cx}" y="${codeY}" text-anchor="middle" font-size="${fontSize}" ${transformAttr}>${r.code}</text>
+          <text class="room-code-text" x="${r.cx}" y="${codeY}" text-anchor="middle" font-size="${fontSize}">${r.code}</text>
           ${showName ? `<text class="room-name-text" x="${r.cx}" y="${nameY}" text-anchor="middle">${displayName}</text>` : ''}
         </g>
       `;
