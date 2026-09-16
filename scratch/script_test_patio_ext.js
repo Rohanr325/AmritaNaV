@@ -1004,14 +1004,11 @@ const appState = {
   currentFloor: 0,
   selectedRoomId: null,
   activeCategory: 'ALL',
-  activeTab: 'explore',
   startRoomId: null,
   destRoomId: null,
   currentRoute: null,
   isSimulating: false,
-  simFrameId: null,
   showGraph: false,
-  showLegend: false,
   theme: 'theme-dark'
 };
 
@@ -1694,25 +1691,7 @@ function selectRoom(roomId, shouldFocus = true) {
   if (el) el.classList.add('selected');
 
   appState.selectedRoomId = roomId;
-
-  // If currently in directions tab, allow picking directly into From/To
-  if (appState.activeTab === 'directions') {
-    const startSel = document.getElementById('startRoomSelect');
-    const destSel = document.getElementById('destRoomSelect');
-    if (!appState.startRoomId) {
-      appState.startRoomId = roomId;
-      if (startSel) startSel.value = roomId;
-    } else if (!appState.destRoomId) {
-      appState.destRoomId = roomId;
-      if (destSel) destSel.value = roomId;
-    } else {
-      appState.destRoomId = roomId;
-      if (destSel) destSel.value = roomId;
-    }
-    calculateAndRenderRoute();
-  } else {
-    showRoomDetailCard(room);
-  }
+  showRoomDetailCard(room);
 
   if (shouldFocus && viewport) {
     viewport.focusRoom(room);
@@ -1738,19 +1717,15 @@ function showRoomDetailCard(room) {
   document.getElementById('detailRoomDesc').textContent = room.desc;
 
   document.getElementById('btnNavigateTo').onclick = () => {
-    card.style.display = 'none';
     switchTab('directions');
-    const destSel = document.getElementById('destRoomSelect');
-    if (destSel) destSel.value = room.id;
+    document.getElementById('destRoomSelect').value = room.id;
     appState.destRoomId = room.id;
     calculateAndRenderRoute();
   };
 
   document.getElementById('btnNavigateFrom').onclick = () => {
-    card.style.display = 'none';
     switchTab('directions');
-    const startSel = document.getElementById('startRoomSelect');
-    if (startSel) startSel.value = room.id;
+    document.getElementById('startRoomSelect').value = room.id;
     appState.startRoomId = room.id;
     calculateAndRenderRoute();
   };
@@ -2037,20 +2012,6 @@ function renderTurnDirections(steps) {
 
 function clearRoute() {
   appState.currentRoute = null;
-  if (appState.isSimulating) {
-    cancelAnimationFrame(appState.simFrameId);
-    appState.isSimulating = false;
-    const simBtn = document.getElementById('startSimBtn');
-    if (simBtn) {
-      simBtn.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
-        Simulate
-      `;
-    }
-  }
-
   const glowPath = document.getElementById('svgRouteGlow');
   const corePath = document.getElementById('svgRouteCore');
   const outdoorGlow = document.getElementById('svgRouteOutdoorGlow');
@@ -2075,118 +2036,13 @@ function clearRoute() {
 }
 
 function switchTab(tabName) {
-  appState.activeTab = tabName;
-  const exploreTab = document.getElementById('tabExplore');
-  const dirTab = document.getElementById('tabDirections');
-  const exploreSec = document.getElementById('exploreSection');
-  const dirSec = document.getElementById('directionsSection');
-
-  if (tabName === 'explore') {
-    if (exploreTab) {
-      exploreTab.classList.add('active');
-      exploreTab.setAttribute('aria-selected', 'true');
-    }
-    if (dirTab) {
-      dirTab.classList.remove('active');
-      dirTab.setAttribute('aria-selected', 'false');
-    }
-    if (exploreSec) exploreSec.style.display = 'block';
-    if (dirSec) dirSec.style.display = 'none';
-  } else {
-    if (exploreTab) {
-      exploreTab.classList.remove('active');
-      exploreTab.setAttribute('aria-selected', 'false');
-    }
-    if (dirTab) {
-      dirTab.classList.add('active');
-      dirTab.setAttribute('aria-selected', 'true');
-    }
-    if (exploreSec) exploreSec.style.display = 'none';
-    if (dirSec) dirSec.style.display = 'flex';
-  }
-}
-
-function startWalkingSimulation() {
-  const route = appState.currentRoute;
-  if (!route) return;
-
-  const walker = document.getElementById('svgWalkerAvatar');
-  const btn = document.getElementById('startSimBtn');
-  if (!walker || !btn) return;
-
-  if (appState.isSimulating) {
-    cancelAnimationFrame(appState.simFrameId);
-    appState.isSimulating = false;
-    btn.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-      </svg>
-      Simulate
-    `;
-    return;
-  }
-
-  // Get points for current floor leg
-  let points = [];
-  if (!route.isMultiFloor) {
-    if (route.floor === appState.currentFloor) {
-      points = route.points;
-    }
-  } else {
-    if (appState.currentFloor === route.fStart) {
-      points = route.leg1.points;
-    } else if (appState.currentFloor === route.fDest) {
-      points = route.leg2.points;
-    }
-  }
-
-  if (!points || points.length < 2) return;
-
-  appState.isSimulating = true;
-  walker.style.display = 'block';
-  btn.innerHTML = `
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <rect x="6" y="4" width="4" height="16"></rect>
-      <rect x="14" y="4" width="4" height="16"></rect>
-    </svg>
-    Pause
-  `;
-
-  let seg = 0;
-  let t = 0;
-  const speed = 0.025;
-
-  function step() {
-    if (!appState.isSimulating) return;
-
-    const p1 = points[seg];
-    const p2 = points[seg + 1];
-
-    if (!p2) {
-      appState.isSimulating = false;
-      btn.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
-        Replay
-      `;
-      return;
-    }
-
-    t += speed;
-    if (t >= 1.0) {
-      t = 0;
-      seg++;
-    }
-
-    const curX = p1[0] + (p2[0] - p1[0]) * Math.min(t, 1.0);
-    const curY = p1[1] + (p2[1] - p1[1]) * Math.min(t, 1.0);
-
-    walker.setAttribute('transform', `translate(${curX}, ${curY})`);
-    appState.simFrameId = requestAnimationFrame(step);
-  }
-
-  appState.simFrameId = requestAnimationFrame(step);
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+  });
+  const dirPanel = document.getElementById('directionsPanel');
+  const dirTab = document.getElementById('directoryTab');
+  if (dirPanel) dirPanel.style.display = (tabName === 'directions') ? 'flex' : 'none';
+  if (dirTab) dirTab.style.display = (tabName === 'directory') ? 'flex' : 'none';
 }
 
 function setupRoomEvents() {
@@ -2255,9 +2111,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Category Filter Chips
-  document.querySelectorAll('#categoryChips .chip').forEach(chip => {
+  document.querySelectorAll('.chip-btn').forEach(chip => {
     chip.addEventListener('click', () => {
-      document.querySelectorAll('#categoryChips .chip').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.chip-btn').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
       appState.activeCategory = chip.getAttribute('data-category');
       renderDirectoryList(searchInput ? searchInput.value : '', appState.activeCategory);
@@ -2265,28 +2121,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Tab Switchers
-  const tabExplore = document.getElementById('tabExplore');
-  const tabDirections = document.getElementById('tabDirections');
-  if (tabExplore) tabExplore.addEventListener('click', () => switchTab('explore'));
-  if (tabDirections) tabDirections.addEventListener('click', () => switchTab('directions'));
-
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const tab = btn.getAttribute('data-tab') || (btn.id === 'tabDirections' ? 'directions' : 'explore');
-      switchTab(tab);
+      switchTab(btn.getAttribute('data-tab'));
     });
   });
-
-  // Close Room Detail Card
-  const closeDetailCardBtn = document.getElementById('closeDetailCardBtn');
-  if (closeDetailCardBtn) {
-    closeDetailCardBtn.addEventListener('click', () => {
-      const card = document.getElementById('roomDetailCard');
-      if (card) card.style.display = 'none';
-      document.querySelectorAll('.room-group.selected').forEach(el => el.classList.remove('selected'));
-      appState.selectedRoomId = null;
-    });
-  }
 
   // Directions Dropdown Events
   const startSelect = document.getElementById('startRoomSelect');
@@ -2318,57 +2157,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Popular Route Presets
-  document.querySelectorAll('[data-preset]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const preset = btn.getAttribute('data-preset');
-      let start = '', dest = '';
-      if (preset === 'REC_TO_COMP') { start = 'GAD-PR'; dest = 'S-013'; }
-      else if (preset === 'AMRI_TO_ROBOT') { start = 'A-006'; dest = 'S-011'; }
-      else if (preset === 'ADMIN_TO_PRIN') { start = 'GAD-PR'; dest = 'N-013'; }
-      else if (preset === 'ACHA_TO_NANO') { start = 'A-001'; dest = 'N-005-006'; }
-
-      if (startSelect) startSelect.value = start;
-      if (destSelect) destSelect.value = dest;
-      appState.startRoomId = start;
-      appState.destRoomId = dest;
-      calculateAndRenderRoute();
-    });
-  });
-
-  // Walking Simulation Button
-  const startSimBtn = document.getElementById('startSimBtn');
-  if (startSimBtn) {
-    startSimBtn.addEventListener('click', startWalkingSimulation);
-  }
-
   // Theme Controls
   const themeDarkBtn = document.getElementById('themeDarkBtn');
   const themeBlueprintBtn = document.getElementById('themeBlueprintBtn');
-  const themeLightBtn = document.getElementById('themeLightBtn');
-
-  function applyTheme(theme) {
-    appState.theme = `theme-${theme}`;
-    document.body.className = `theme-${theme}`;
-    if (themeDarkBtn) themeDarkBtn.classList.toggle('active', theme === 'dark');
-    if (themeBlueprintBtn) themeBlueprintBtn.classList.toggle('active', theme === 'blueprint');
-    if (themeLightBtn) themeLightBtn.classList.toggle('active', theme === 'light');
-  }
-
-  if (themeDarkBtn) themeDarkBtn.addEventListener('click', () => applyTheme('dark'));
-  if (themeBlueprintBtn) themeBlueprintBtn.addEventListener('click', () => applyTheme('blueprint'));
-  if (themeLightBtn) themeLightBtn.addEventListener('click', () => applyTheme('light'));
-
-  // Legend Toggle
-  const legendBtn = document.getElementById('toggleLegendBtn');
-  const legendEl = document.getElementById('mapLegend');
-  if (legendBtn && legendEl) {
-    legendBtn.addEventListener('click', () => {
-      appState.showLegend = !appState.showLegend;
-      legendBtn.classList.toggle('active', appState.showLegend);
-      legendEl.classList.toggle('hidden', !appState.showLegend);
+  if (themeDarkBtn) {
+    themeDarkBtn.addEventListener('click', () => {
+      document.body.className = 'theme-dark';
+      themeDarkBtn.classList.add('active');
+      if (themeBlueprintBtn) themeBlueprintBtn.classList.remove('active');
     });
-    legendEl.classList.add('hidden');
+  }
+  if (themeBlueprintBtn) {
+    themeBlueprintBtn.addEventListener('click', () => {
+      document.body.className = 'theme-blueprint';
+      themeBlueprintBtn.classList.add('active');
+      if (themeDarkBtn) themeDarkBtn.classList.remove('active');
+    });
   }
 
   // Zoom Controls
@@ -2391,18 +2195,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Sidebar Toggle for Mobile & Collapse Button
+  // Sidebar Toggle for Mobile
   const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
-  const collapseSidebarBtn = document.getElementById('collapseSidebarBtn');
   const navSidebar = document.getElementById('navSidebar');
-
-  if (collapseSidebarBtn && navSidebar) {
-    collapseSidebarBtn.addEventListener('click', () => {
-      navSidebar.classList.add('collapsed');
-      if (sidebarToggleBtn) sidebarToggleBtn.classList.add('visible');
-    });
-  }
-
   if (sidebarToggleBtn && navSidebar) {
     sidebarToggleBtn.addEventListener('click', () => {
       navSidebar.classList.toggle('collapsed');
