@@ -75,6 +75,11 @@
         <g id="svgWalkerAvatar" class="walker-avatar" style="display: none;">
           <circle cx="0" cy="0" r="6" class="walker-beacon" />
         </g>
+        <g id="svgStairPin" class="route-pin stair" style="display: none;">
+          <circle cx="0" cy="0" r="10" class="stair-pin-halo" />
+          <circle cx="0" cy="0" r="6" class="stair-pin-core" />
+          <text id="svgStairPinText" x="0" y="2.5" class="stair-pin-icon" text-anchor="middle">▲</text>
+        </g>
       </g>
     </svg>
   </main>
@@ -162,6 +167,28 @@
     </div>
   </header>
 
+  <!-- Multi-Floor Route Journey Bar (Shown when a multi-floor route is active) -->
+  <div id="multiFloorJourneyBar" class="multi-floor-journey-bar" style="display: none;">
+    <div class="journey-info">
+      <span class="journey-badge">MULTI-FLOOR</span>
+      <span id="journeySummaryText" class="journey-summary">Ground Floor &rarr; 2nd Floor</span>
+    </div>
+    <div class="journey-controls">
+      <button id="journeyLeg0Btn" class="journey-leg-btn active" data-floor="0" title="View Ground Floor Leg">
+        <span class="leg-num">1</span>
+        <span class="leg-text">Ground Floor</span>
+      </button>
+      <div class="journey-stair-indicator" id="journeyStairIndicator" title="Click to transition between floors">
+        <span class="stair-icon">🪜</span>
+        <span id="journeyStairName">North Atrium Stairs</span>
+      </div>
+      <button id="journeyLeg2Btn" class="journey-leg-btn" data-floor="2" title="View 2nd Floor Leg">
+        <span class="leg-num">2</span>
+        <span class="leg-text">2nd Floor</span>
+      </button>
+    </div>
+  </div>
+
   <!-- ================= 3. COLLAPSIBLE MAP LEGEND ================= -->
   <div id="mapLegend" class="map-legend">
     <div class="legend-title">Map Legend</div>
@@ -170,6 +197,7 @@
       <div class="legend-item"><span class="legend-swatch lab"></span> Laboratory</div>
       <div class="legend-item"><span class="legend-swatch office"></span> Admin / Office</div>
       <div class="legend-item"><span class="legend-swatch toilet"></span> Restroom</div>
+      <div class="legend-item"><span class="legend-swatch stair"></span> Staircase (To Next Floor)</div>
       <div class="legend-item"><span class="legend-swatch selected"></span> Selected Room</div>
     </div>
   </div>
@@ -331,8 +359,8 @@
           <div class="category-chips">
             <button class="chip" data-preset="REC_TO_COMP">Reception &rarr; Computer Lab</button>
             <button class="chip" data-preset="AMRI_TO_ROBOT">Amritheswari &rarr; Robotics</button>
-            <button class="chip" data-preset="ADMIN_TO_PRIN">Reception &rarr; Principal</button>
-            <button class="chip" data-preset="ACHA_TO_NANO">Acharya &rarr; Solar Lab</button>
+            <button class="chip" data-preset="REC_TO_N204">Reception &rarr; N-204 (2F)</button>
+            <button class="chip" data-preset="ACHA_TO_UNESCO">Acharya &rarr; UNESCO (2F)</button>
           </div>
         </div>
 

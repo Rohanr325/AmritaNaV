@@ -181,7 +181,12 @@ const FLOORS_DATA = {
   'wp_admin_cross':          { id: 'wp_admin_cross',          x: 374, y: 696, label: 'Admin Grand Cross Hallway / Central Hall' },
   'wp_admin_a003':           { id: 'wp_admin_a003',           x: 435, y: 696, label: 'A-003 Admin Suite Walkway' },
   'wp_admin_a002':           { id: 'wp_admin_a002',           x: 466, y: 696, label: 'A-002 ENGM Conference Walkway' },
-  'wp_admin_east_st':        { id: 'wp_admin_east_st',        x: 486, y: 696, label: 'Admin East Stairs' },
+  'wp_admin_east_st':        { id: 'wp_admin_east_st',        x: 486, y: 696, label: 'Admin East Corridor' },
+  // 4 Master Staircase Hubs
+  'wp_north_stair_hub':      { id: 'wp_north_stair_hub',      x: 376, y: 268, label: 'North Atrium Stairs (to 2nd Fl)' },
+  'wp_mid_stair_hub':        { id: 'wp_mid_stair_hub',        x: 376, y: 506, label: 'Mid Atrium Stairs (to 2nd Fl)' },
+  'wp_sw_stair_hub':         { id: 'wp_sw_stair_hub',         x: 346, y: 660, label: 'SW Courtyard Stairs (to 2nd Fl)' },
+  'wp_se_stair_hub':         { id: 'wp_se_stair_hub',         x: 404, y: 660, label: 'SE Courtyard Stairs (to 2nd Fl)' },
   'wp_admin_wc_girls':       { id: 'wp_admin_wc_girls',       x: 504, y: 696, label: 'Girls Restroom Walkway (Admin)' },
   'wp_admin_acharya_junc':   { id: 'wp_admin_acharya_junc',   x: 518, y: 696, label: 'Admin East Corridor (Acharya North Path Junc)' },
   'wp_admin_acharya_path':   { id: 'wp_admin_acharya_path',   x: 518, y: 648, label: 'Admin East Elevated Walkway (Acharya West Path)' },
@@ -225,7 +230,8 @@ const FLOORS_DATA = {
   ['wp_west_lower_bridge', 'wp_west_cir', 'indoor'],
   ['wp_west_cir', 'wp_west_mech', 'indoor'],
   ['wp_west_mech', 'wp_west_admis', 'indoor'],
-  ['wp_west_admis', 'wp_west_south_junc', 'indoor'],
+  ['wp_west_admis', 'wp_sw_stair_hub', 'indoor'],
+  ['wp_sw_stair_hub', 'wp_west_south_junc', 'indoor'],
 
   // East Spine Veranda Corridor (along S-Block rooms)
   ['wp_east_spine_top', 'wp_east_computer', 'indoor'],
@@ -241,7 +247,8 @@ const FLOORS_DATA = {
   ['wp_east_lower_bridge', 'wp_east_kitchen', 'indoor'],
   ['wp_east_kitchen', 'wp_east_serve', 'indoor'],
   ['wp_east_serve', 'wp_east_guest', 'indoor'],
-  ['wp_east_guest', 'wp_east_south_junc', 'indoor'],
+  ['wp_east_guest', 'wp_se_stair_hub', 'indoor'],
+  ['wp_se_stair_hub', 'wp_east_south_junc', 'indoor'],
 
   // Connectors across Atrium
   ['wp_west_spine_top', 'wp_east_spine_top', 'indoor'],
@@ -249,7 +256,10 @@ const FLOORS_DATA = {
   ['wp_north_exit_hub', 'wp_east_spine_top', 'indoor'],
   ['wp_west_upper_branch', 'wp_east_upper_branch', 'indoor'],
   ['wp_west_hr', 'wp_east_arts_prin', 'indoor'],
-  ['wp_west_lower_bridge', 'wp_east_lower_bridge', 'indoor'],
+  ['wp_west_lower_bridge', 'wp_mid_stair_hub', 'indoor'],
+  ['wp_mid_stair_hub', 'wp_east_lower_bridge', 'indoor'],
+  ['wp_west_upper_branch', 'wp_north_stair_hub', 'indoor'],
+  ['wp_north_stair_hub', 'wp_east_upper_branch', 'indoor'],
 
   // Upper West Wing Branch (WC-N2 and N-014..N-017)
   ['wp_west_upper_branch', 'wp_nw_cross_upper', 'indoor'],
@@ -363,9 +373,10 @@ const FLOORS_DATA = {
   ['wp_outdoor_sw_north_junc', 'wp_nw_lab_metallurgy', 'outdoor']
     ],
     stairs: [
-      { x: 368, y: 491, w: 14, h: 16, steps: 5, dir: 'h' }, // Central Mid-Bridge
-      { x: 262, y: 689, w: 12, h: 16, steps: 5, dir: 'v' }, // Admin West
-      { x: 486, y: 689, w: 12, h: 16, steps: 5, dir: 'v' }  // Admin East
+      { id: 'stair_north', name: 'North Atrium Stairs', type: 'atrium_double', x: 355, y: 253, w: 42, h: 20, targetFloor: 2, badge: 'STAIRS ▲ 2F', labelX: 376, labelY: 248 },
+      { id: 'stair_mid', name: 'Mid Atrium Stairs', type: 'atrium_double', x: 355, y: 490, w: 42, h: 20, targetFloor: 2, badge: 'STAIRS ▲ 2F', labelX: 376, labelY: 485 },
+      { id: 'stair_sw', name: 'South-West Courtyard Stairs', type: 'l_shaped_sw', x: 316, y: 636, w: 34, h: 52, targetFloor: 2, badge: 'STAIRS ▲ 2F', labelX: 326, labelY: 630 },
+      { id: 'stair_se', name: 'South-East Courtyard Stairs', type: 'l_shaped_se', x: 398, y: 636, w: 34, h: 52, targetFloor: 2, badge: 'STAIRS ▲ 2F', labelX: 422, labelY: 630 }
     ],
     buildingBaseHtml: `
 <!-- Admin Block Footprint (Spans corridor at y=688 to room bottom y=786/848) -->
@@ -410,7 +421,7 @@ const FLOORS_DATA = {
     courtyardsHtml: `
 <!-- 1) Grand Central Courtyard - Upper Atrium -->
     <rect class="courtyard-patio" x="352" y="180" width="48" height="308" rx="3" />
-    <text x="376" y="260" text-anchor="middle" font-size="6" fill="rgba(16, 185, 129, 0.6)" transform="rotate(-90 376 260)" font-weight="600" letter-spacing="1.5">OPEN ATRIUM</text>
+    <text x="376" y="220" text-anchor="middle" font-size="6" fill="rgba(16, 185, 129, 0.6)" transform="rotate(-90 376 220)" font-weight="600" letter-spacing="1.5">OPEN ATRIUM</text>
     <text x="376" y="420" text-anchor="middle" font-size="6" fill="rgba(16, 185, 129, 0.6)" transform="rotate(-90 376 420)" font-weight="600" letter-spacing="1.5">OPEN ATRIUM</text>
 
     <!-- 2) Grand Central Courtyard - Lower Quadrangle (Reaches corridor at y=688) -->
@@ -682,7 +693,10 @@ const FLOORS_DATA = {
   wp_f2_mid_bridge_center: { id: 'wp_f2_mid_bridge_center', x: 374, y: 405, label: 'Mid Bridge Center' },
 
   // Lower Cross & Mid Stairs
-  wp_f2_mid_stair: { id: 'wp_f2_mid_stair', x: 374, y: 508, label: 'Central Mid Stairs (2nd Fl)' },
+  wp_f2_mid_stair: { id: 'wp_f2_mid_stair', x: 376, y: 506, label: 'Mid Atrium Stairs (2nd Fl)' },
+  wp_f2_north_stair: { id: 'wp_f2_north_stair', x: 376, y: 268, label: 'North Atrium Stairs (2nd Fl)' },
+  wp_f2_sw_stair_hub: { id: 'wp_f2_sw_stair_hub', x: 346, y: 660, label: 'SW Courtyard Stairs (2nd Fl)' },
+  wp_f2_se_stair_hub: { id: 'wp_f2_se_stair_hub', x: 404, y: 660, label: 'SE Courtyard Stairs (2nd Fl)' },
 
   // N204 Courtyard Loop (Mid-West)
   wp_f2_n204_exit: { id: 'wp_f2_n204_exit', x: 262, y: 508, label: 'N204 East Exit' },
@@ -739,7 +753,8 @@ const FLOORS_DATA = {
   ['wp_f2_a201b', 'wp_f2_a201a'],
 
   // West Spine
-  ['wp_f2_spine_w_bottom', 'wp_f2_n201'],
+  ['wp_f2_spine_w_bottom', 'wp_f2_sw_stair_hub'],
+  ['wp_f2_sw_stair_hub', 'wp_f2_n201'],
   ['wp_f2_n201', 'wp_f2_n202'],
   ['wp_f2_n202', 'wp_f2_n203'],
   ['wp_f2_n203', 'wp_f2_spine_w_cross_lower'],
@@ -757,7 +772,8 @@ const FLOORS_DATA = {
   ['wp_f2_n211c', 'wp_f2_spine_w_top'],
 
   // East Spine
-  ['wp_f2_spine_e_bottom', 'wp_f2_s201'],
+  ['wp_f2_spine_e_bottom', 'wp_f2_se_stair_hub'],
+  ['wp_f2_se_stair_hub', 'wp_f2_s201'],
   ['wp_f2_s201', 'wp_f2_s202'],
   ['wp_f2_s202', 'wp_f2_s203'],
   ['wp_f2_s203', 'wp_f2_spine_e_cross_lower'],
@@ -802,7 +818,8 @@ const FLOORS_DATA = {
 
   // Upper Cross Passage
   ['wp_f2_n209_wc', 'wp_f2_spine_w_cross_upper'],
-  ['wp_f2_spine_w_cross_upper', 'wp_f2_spine_e_cross_upper'],
+  ['wp_f2_spine_w_cross_upper', 'wp_f2_north_stair'],
+  ['wp_f2_north_stair', 'wp_f2_spine_e_cross_upper'],
   ['wp_f2_spine_e_cross_upper', 'wp_f2_unesco_junc'],
 
   // Upper West N209 Corridor
@@ -821,9 +838,10 @@ const FLOORS_DATA = {
   ['wp_f2_unesco_mid', 'wp_f2_spine_e_mid_east']
     ],
     stairs: [
-      { x: 368, y: 491, w: 14, h: 16, steps: 5, dir: 'h' }, // Central Mid-Bridge
-      { x: 262, y: 689, w: 12, h: 16, steps: 5, dir: 'v' }, // Admin West
-      { x: 486, y: 689, w: 12, h: 16, steps: 5, dir: 'v' }  // Admin East
+      { id: 'stair_north', name: 'North Atrium Stairs', type: 'atrium_double', x: 355, y: 253, w: 42, h: 20, targetFloor: 0, badge: 'STAIRS ▼ GF', labelX: 376, labelY: 248 },
+      { id: 'stair_mid', name: 'Mid Atrium Stairs', type: 'atrium_double', x: 355, y: 490, w: 42, h: 20, targetFloor: 0, badge: 'STAIRS ▼ GF', labelX: 376, labelY: 485 },
+      { id: 'stair_sw', name: 'South-West Courtyard Stairs', type: 'l_shaped_sw', x: 316, y: 636, w: 34, h: 52, targetFloor: 0, badge: 'STAIRS ▼ GF', labelX: 326, labelY: 630 },
+      { id: 'stair_se', name: 'South-East Courtyard Stairs', type: 'l_shaped_se', x: 398, y: 636, w: 34, h: 52, targetFloor: 0, badge: 'STAIRS ▼ GF', labelX: 422, labelY: 630 }
     ],
     buildingBaseHtml: `
 
@@ -994,9 +1012,10 @@ let GRAPH = FLOORS_DATA[0].graph;
 
 // Shared vertical staircases linking Ground Floor (0) and Second Floor (2)
 const SHARED_STAIRS = [
-  { id: 'stair_admin_w', name: 'Admin West Staircase', f0Node: 'wp_admin_west_st', f2Node: 'wp_f2_stair_admin_w' },
-  { id: 'stair_admin_e', name: 'Admin East Staircase', f0Node: 'wp_admin_east_st', f2Node: 'wp_f2_stair_admin_e' },
-  { id: 'stair_mid', name: 'Central Mid-Bridge Stairs', f0Node: 'wp_west_lower_bridge', f2Node: 'wp_f2_mid_stair' }
+  { id: 'stair_north', name: 'North Atrium Stairs', f0Node: 'wp_north_stair_hub', f2Node: 'wp_f2_north_stair' },
+  { id: 'stair_mid', name: 'Mid Atrium Stairs', f0Node: 'wp_mid_stair_hub', f2Node: 'wp_f2_mid_stair' },
+  { id: 'stair_sw', name: 'South-West Courtyard Stairs', f0Node: 'wp_sw_stair_hub', f2Node: 'wp_f2_sw_stair_hub' },
+  { id: 'stair_se', name: 'South-East Courtyard Stairs', f0Node: 'wp_se_stair_hub', f2Node: 'wp_f2_se_stair_hub' }
 ];
 
 // Application State
@@ -1406,23 +1425,88 @@ function renderFloor(floorId) {
   const corrGroup = document.getElementById('layerCorridors');
   if (corrGroup) corrGroup.innerHTML = fData.corridorsHtml;
 
-  // 4. Staircases
+  // 4. Staircases (Interactive Vector CAD with Step Treads & Direction Badges)
   const stairGroup = document.getElementById('layerStairs');
   if (stairGroup) {
     let stairHtml = '';
     fData.stairs.forEach(st => {
-      stairHtml += `<rect class="stair-box" x="${st.x}" y="${st.y}" width="${st.w}" height="${st.h}" />`;
-      for (let i = 1; i < st.steps; i++) {
-        if (st.dir === 'v') {
-          const yLine = st.y + (st.h / st.steps) * i;
-          stairHtml += `<line class="stair-step" x1="${st.x}" y1="${yLine}" x2="${st.x + st.w}" y2="${yLine}" />`;
-        } else {
-          const xLine = st.x + (st.w / st.steps) * i;
-          stairHtml += `<line class="stair-step" x1="${xLine}" y1="${st.y}" x2="${xLine}" y2="${st.y + st.h}" />`;
-        }
+      stairHtml += `<g class="stair-group" id="stair-${st.id}" data-stair-id="${st.id}" data-name="${st.name}" data-target-floor="${st.targetFloor}" tabindex="0" role="button" aria-label="${st.name} to ${st.targetFloor === 2 ? '2nd Floor' : 'Ground Floor'}">`;
+      
+      if (st.type === 'atrium_double') {
+        // Grand Central Atrium Staircase: double flight with central run and landing
+        stairHtml += `
+          <!-- Outer boundary -->
+          <rect class="stair-box" x="${st.x}" y="${st.y}" width="${st.w}" height="${st.h}" rx="2" />
+          <!-- Center upper flight -->
+          <rect class="stair-inner-box" x="${st.x + 12}" y="${st.y}" width="18" height="9" />
+          <line class="stair-step" x1="${st.x + 16}" y1="${st.y}" x2="${st.x + 16}" y2="${st.y + 9}" />
+          <line class="stair-step" x1="${st.x + 21}" y1="${st.y}" x2="${st.x + 21}" y2="${st.y + 9}" />
+          <line class="stair-step" x1="${st.x + 26}" y1="${st.y}" x2="${st.x + 26}" y2="${st.y + 9}" />
+          <!-- Left side flight -->
+          <rect class="stair-inner-box" x="${st.x}" y="${st.y + 7}" width="12" height="13" />
+          <line class="stair-step" x1="${st.x}" y1="${st.y + 10}" x2="${st.x + 12}" y2="${st.y + 10}" />
+          <line class="stair-step" x1="${st.x}" y1="${st.y + 13}" x2="${st.x + 12}" y2="${st.y + 13}" />
+          <line class="stair-step" x1="${st.x}" y1="${st.y + 16}" x2="${st.x + 12}" y2="${st.y + 16}" />
+          <!-- Right side flight -->
+          <rect class="stair-inner-box" x="${st.x + 30}" y="${st.y + 7}" width="12" height="13" />
+          <line class="stair-step" x1="${st.x + 30}" y1="${st.y + 10}" x2="${st.x + 42}" y2="${st.y + 10}" />
+          <line class="stair-step" x1="${st.x + 30}" y1="${st.y + 13}" x2="${st.x + 42}" y2="${st.y + 13}" />
+          <line class="stair-step" x1="${st.x + 30}" y1="${st.y + 16}" x2="${st.x + 42}" y2="${st.y + 16}" />
+          <!-- Center landing -->
+          <rect class="stair-landing" x="${st.x + 12}" y="${st.y + 9}" width="18" height="11" />
+        `;
+      } else if (st.type === 'l_shaped_sw') {
+        // South-West Courtyard Corner Staircase (L-Shape south of N-001 / N201)
+        stairHtml += `
+          <!-- Outer boundary L-path -->
+          <path class="stair-box" d="M 316 636 L 350 636 L 350 688 L 334 688 L 334 656 L 316 656 Z" />
+          <!-- Corner landing -->
+          <rect class="stair-landing" x="316" y="636" width="14" height="20" />
+          <!-- Top horizontal run treads -->
+          <line class="stair-step" x1="334" y1="636" x2="334" y2="656" />
+          <line class="stair-step" x1="338" y1="636" x2="338" y2="656" />
+          <line class="stair-step" x1="342" y1="636" x2="342" y2="656" />
+          <line class="stair-step" x1="346" y1="636" x2="346" y2="656" />
+          <!-- Lower vertical run treads -->
+          <line class="stair-step" x1="334" y1="662" x2="350" y2="662" />
+          <line class="stair-step" x1="334" y1="667" x2="350" y2="667" />
+          <line class="stair-step" x1="334" y1="672" x2="350" y2="672" />
+          <line class="stair-step" x1="334" y1="677" x2="350" y2="677" />
+          <line class="stair-step" x1="334" y1="682" x2="350" y2="682" />
+        `;
+      } else if (st.type === 'l_shaped_se') {
+        // South-East Courtyard Corner Staircase (L-Shape south of S-001 / S201)
+        stairHtml += `
+          <!-- Outer boundary L-path -->
+          <path class="stair-box" d="M 398 636 L 432 636 L 432 656 L 414 656 L 414 688 L 398 688 Z" />
+          <!-- Corner landing -->
+          <rect class="stair-landing" x="418" y="636" width="14" height="20" />
+          <!-- Top horizontal run treads -->
+          <line class="stair-step" x1="402" y1="636" x2="402" y2="656" />
+          <line class="stair-step" x1="406" y1="636" x2="406" y2="656" />
+          <line class="stair-step" x1="410" y1="636" x2="410" y2="656" />
+          <line class="stair-step" x1="414" y1="636" x2="414" y2="656" />
+          <!-- Lower vertical run treads -->
+          <line class="stair-step" x1="398" y1="662" x2="414" y2="662" />
+          <line class="stair-step" x1="398" y1="667" x2="414" y2="667" />
+          <line class="stair-step" x1="398" y1="672" x2="414" y2="672" />
+          <line class="stair-step" x1="398" y1="677" x2="414" y2="677" />
+          <line class="stair-step" x1="398" y1="682" x2="414" y2="682" />
+        `;
+      } else {
+        stairHtml += `<rect class="stair-box" x="${st.x}" y="${st.y}" width="${st.w}" height="${st.h}" />`;
       }
+
+      // Directional Floor Badge / Label
+      stairHtml += `
+        <g class="stair-badge-group">
+          <rect class="stair-badge-bg" x="${st.labelX - 16}" y="${st.labelY - 5}" width="32" height="8" rx="2" />
+          <text class="stair-badge-text" x="${st.labelX}" y="${st.labelY + 1}" text-anchor="middle">${st.badge}</text>
+        </g>
+      </g>`;
     });
     stairGroup.innerHTML = stairHtml;
+    setupStairEvents();
   }
 
   // 5. Doors & Openings
@@ -1514,6 +1598,37 @@ function renderFloor(floorId) {
   if (appState.currentRoute) {
     renderActiveRouteGraphics();
   }
+}
+
+
+function showToast(message) {
+  const existing = document.querySelector('.nav-toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'nav-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 2700);
+}
+
+function setupStairEvents() {
+  document.querySelectorAll('.stair-group').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const targetFloor = parseInt(el.getAttribute('data-target-floor'), 10);
+      const stairName = el.getAttribute('data-name');
+      const stairId = el.getAttribute('data-stair-id');
+      switchFloor(targetFloor);
+      showToast(`Switched to ${targetFloor === 2 ? '2nd Floor' : 'Ground Floor'} via ${stairName}`);
+      setTimeout(() => {
+        const newStairEl = document.getElementById('stair-' + stairId);
+        if (newStairEl) {
+          newStairEl.classList.add('stair-flash');
+          setTimeout(() => newStairEl.classList.remove('stair-flash'), 1800);
+        }
+      }, 50);
+    });
+  });
 }
 
 function switchFloor(floorNumber, preserveView = true) {
@@ -1869,12 +1984,8 @@ function calculateAndRenderRoute() {
 
   appState.currentRoute = route;
 
-  // Only switch floor if current floor has no part of the route
-  const currentFloorHasRoute = route.isMultiFloor
-    ? (appState.currentFloor === route.fStart || appState.currentFloor === route.fDest)
-    : (appState.currentFloor === route.floor);
-
-  if (!currentFloorHasRoute) {
+  // If start room is on another floor and we are not on it, switch to start room's floor
+  if (route.startRoom.floor !== appState.currentFloor) {
     switchFloor(route.startRoom.floor);
   } else {
     renderActiveRouteGraphics();
@@ -1928,6 +2039,29 @@ function renderActiveRouteGraphics() {
     }
   }
 
+  const stairPin = document.getElementById('svgStairPin');
+  const stairPinText = document.getElementById('svgStairPinText');
+  const journeyBar = document.getElementById('multiFloorJourneyBar');
+  const journeySummary = document.getElementById('journeySummaryText');
+  const journeyStairName = document.getElementById('journeyStairName');
+  const leg0Btn = document.getElementById('journeyLeg0Btn');
+  const leg2Btn = document.getElementById('journeyLeg2Btn');
+
+  // Update Multi-Floor Journey Bar
+  if (route.isMultiFloor && journeyBar) {
+    journeyBar.style.display = 'flex';
+    if (journeySummary) {
+      journeySummary.textContent = `${route.startRoom.name} (${route.fStart === 0 ? 'Ground' : '2nd Fl'}) → ${route.destRoom.name} (${route.fDest === 0 ? 'Ground' : '2nd Fl'})`;
+    }
+    if (journeyStairName) {
+      journeyStairName.textContent = route.staircase ? route.staircase.name : 'Staircase';
+    }
+    if (leg0Btn) leg0Btn.classList.toggle('active', appState.currentFloor === 0);
+    if (leg2Btn) leg2Btn.classList.toggle('active', appState.currentFloor === 2);
+  } else if (journeyBar) {
+    journeyBar.style.display = 'none';
+  }
+
   if (activeLeg) {
     if (glowPath && corePath) {
       glowPath.setAttribute('d', activeLeg.indoorD || '');
@@ -1943,6 +2077,25 @@ function renderActiveRouteGraphics() {
       startPin.style.display = 'block';
       destPin.style.display = 'block';
     }
+
+    // Position Stair Pin at vertical transition hub
+    if (route.isMultiFloor && stairPin) {
+      const isStartFloor = (appState.currentFloor === route.fStart);
+      const stairNode = isStartFloor
+        ? (route.fStart === 0 ? route.staircase.f0Node : route.staircase.f2Node)
+        : (route.fDest === 0 ? route.staircase.f0Node : route.staircase.f2Node);
+      const stairPt = FLOORS_DATA[appState.currentFloor].waypoints[stairNode];
+      if (stairPt) {
+        stairPin.setAttribute('transform', `translate(${stairPt.x}, ${stairPt.y})`);
+        if (stairPinText) {
+          stairPinText.textContent = isStartFloor ? (route.fStart === 0 ? '▲' : '▼') : (route.fDest === 0 ? '▼' : '▲');
+        }
+        stairPin.style.display = 'block';
+      }
+    } else if (stairPin) {
+      stairPin.style.display = 'none';
+    }
+
     if (viewport && activeLeg.points.length > 0) {
       const xs = activeLeg.points.map(p => p[0]);
       const ys = activeLeg.points.map(p => p[1]);
@@ -1956,6 +2109,7 @@ function renderActiveRouteGraphics() {
     if (outdoorCore) outdoorCore.setAttribute('d', '');
     if (startPin) startPin.style.display = 'none';
     if (destPin) destPin.style.display = 'none';
+    if (stairPin) stairPin.style.display = 'none';
   }
 }
 
@@ -2070,6 +2224,10 @@ function clearRoute() {
   if (startPin) startPin.style.display = 'none';
   if (destPin) destPin.style.display = 'none';
   if (walker) walker.style.display = 'none';
+  const stairPin = document.getElementById('svgStairPin');
+  if (stairPin) stairPin.style.display = 'none';
+  const journeyBar = document.getElementById('multiFloorJourneyBar');
+  if (journeyBar) journeyBar.style.display = 'none';
 
   const metricsCard = document.getElementById('routeMetricsCard');
   if (metricsCard) metricsCard.style.display = 'none';
@@ -2130,11 +2288,6 @@ function startWalkingSimulation() {
     return;
   }
 
-  // For multi-floor route, always start simulation from the journey start floor
-  if (route.isMultiFloor && appState.currentFloor !== route.fStart) {
-    switchFloor(route.fStart);
-  }
-
   // Get points for current floor leg
   let points = [];
   if (!route.isMultiFloor) {
@@ -2180,6 +2333,7 @@ function startWalkingSimulation() {
         t = 0;
         const wk = document.getElementById('svgWalkerAvatar');
         if (wk) wk.style.display = 'block';
+        showToast(`Ascending ${route.staircase.name} to 2nd Floor...`);
         appState.simFrameId = requestAnimationFrame(step);
         return;
       }
@@ -2220,6 +2374,32 @@ function setupRoomEvents() {
   });
 }
 
+function setupJourneyBarEvents() {
+  const journeyLeg0Btn = document.getElementById('journeyLeg0Btn');
+  const journeyLeg2Btn = document.getElementById('journeyLeg2Btn');
+  const journeyStairIndicator = document.getElementById('journeyStairIndicator');
+
+  if (journeyLeg0Btn) {
+    journeyLeg0Btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchFloor(0);
+    });
+  }
+  if (journeyLeg2Btn) {
+    journeyLeg2Btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchFloor(2);
+    });
+  }
+  if (journeyStairIndicator) {
+    journeyStairIndicator.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const nextFloor = (appState.currentFloor === 0) ? 2 : 0;
+      switchFloor(nextFloor);
+    });
+  }
+}
+
 function setupFloorSwitcher() {
   document.querySelectorAll('.floor-seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2248,6 +2428,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Setup Floor Switcher Buttons
   setupFloorSwitcher();
+
+  // Setup Multi-Floor Journey Bar Buttons
+  setupJourneyBarEvents();
 
   // Populate Dropdowns
   populateDropdowns();
@@ -2348,6 +2531,8 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (preset === 'AMRI_TO_ROBOT') { start = 'A-006'; dest = 'S-011'; }
       else if (preset === 'ADMIN_TO_PRIN') { start = 'GAD-PR'; dest = 'N-013'; }
       else if (preset === 'ACHA_TO_NANO') { start = 'A-001'; dest = 'N-005-006'; }
+      else if (preset === 'REC_TO_N204') { start = 'GAD-PR'; dest = 'N204B'; }
+      else if (preset === 'ACHA_TO_UNESCO') { start = 'A-001'; dest = 'UNESCO-CHAIR'; }
 
       if (startSelect) startSelect.value = start;
       if (destSelect) destSelect.value = dest;
