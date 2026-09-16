@@ -1018,6 +1018,19 @@ const SHARED_STAIRS = [
   { id: 'stair_se', name: 'South-East Courtyard Stairs', f0Node: 'wp_se_stair_hub', f2Node: 'wp_f2_se_stair_hub' }
 ];
 
+// Popular landmarks for fast "Where are you?" selection
+const POPULAR_LANDMARKS = [
+  { id: 'GAD-PR', name: 'Main Entrance & Reception', wing: 'Admin Block', floor: 0, code: 'GAD' },
+  { id: 'A-001', name: 'Acharya Hall', wing: 'Admin Block', floor: 0, code: 'A-001' },
+  { id: 'A-006', name: 'Amritheswari Hall', wing: 'Admin Block', floor: 0, code: 'A-006' },
+  { id: 'S-013', name: 'Central Computer Lab', wing: 'Southern Wing', floor: 0, code: 'S-013' },
+  { id: 'N-001', name: 'Admissions Office', wing: 'Northern Wing', floor: 0, code: 'N-001' },
+  { id: 'S-011', name: 'CNC Robotics Lab', wing: 'Southern Wing', floor: 0, code: 'S-011' },
+  { id: 'N-019', name: 'Electrical Machines Lab', wing: 'Northern Wing', floor: 0, code: 'N-019' },
+  { id: 'N204B', name: 'Seminar Hall N-204', wing: 'North Wing (2F)', floor: 2, code: 'N204B' },
+  { id: 'UNESCO-CHAIR', name: 'UNESCO Chair', wing: 'East Wing (2F)', floor: 2, code: 'UNESCO' }
+];
+
 // Application State
 const appState = {
   currentFloor: 0,
@@ -1031,7 +1044,10 @@ const appState = {
   simFrameId: null,
   showGraph: false,
   showLegend: false,
-  theme: 'theme-dark'
+  theme: 'theme-dark',
+  userLocation: null,
+  isPinpointing: false,
+  pendingDestinationId: null
 };
 
 // ==========================================================================
@@ -1243,19 +1259,83 @@ function buildRouteLeg(floorId, startRoom, destRoom, path, isStartRoomReal = tru
 }
 
 function findRoute(startRoomId, destRoomId) {
-  const startRoom = ALL_ROOMS.find(r => r.id === startRoomId);
-  const destRoom = ALL_ROOMS.find(r => r.id === destRoomId);
+  let startRoom = null;
+  let customCleanup = null;
+  let startNodeId = null;
 
-  if (!startRoom || !destRoom || startRoomId === destRoomId) return null;
+  if (startRoomId === 'USER_LOCATION') {
+    const uLoc = appState.userLocation;
+    if (!uLoc) return null;
+    if (uLoc.type === 'room') {
+      startRoom = ALL_ROOMS.find(r => r.id === uLoc.roomId);
+      if (!startRoom) return null;
+      startNodeId = 'door_' + startRoom.id;
+    } else {
+      // Custom Pinpoint Location on map
+      const fId = uLoc.floor;
+      const fData = FLOORS_DATA[fId];
+      if (!fData) return null;
+      startRoom = {
+        id: 'USER_LOCATION',
+        name: uLoc.name || 'Your Position',
+        code: 'YOU',
+        wing: 'Current Location',
+        floor: fId,
+        x: uLoc.x - 10,
+        y: uLoc.y - 10,
+        w: 20,
+        h: 20,
+        cx: uLoc.x,
+        cy: uLoc.y,
+        door: [uLoc.x, uLoc.y]
+      };
+      startNodeId = 'door_USER_LOCATION';
+      fData.waypoints[startNodeId] = {
+        id: startNodeId,
+        x: uLoc.x,
+        y: uLoc.y,
+        label: 'Your Position'
+      };
+      fData.graph[startNodeId] = [];
+      const nwId = uLoc.nearestWaypointId;
+      const nwPt = fData.waypoints[nwId];
+      if (nwPt) {
+        const dist = Math.hypot(uLoc.x - nwPt.x, uLoc.y - nwPt.y) * 0.4;
+        fData.graph[startNodeId].push({ to: nwId, dist, geomDist: dist, type: 'indoor' });
+        fData.graph[nwId].push({ to: startNodeId, dist, geomDist: dist, type: 'indoor' });
+      }
+      customCleanup = () => {
+        delete fData.waypoints[startNodeId];
+        delete fData.graph[startNodeId];
+        if (nwPt && fData.graph[nwId]) {
+          fData.graph[nwId] = fData.graph[nwId].filter(e => e.to !== startNodeId);
+        }
+      };
+    }
+  } else {
+    startRoom = ALL_ROOMS.find(r => r.id === startRoomId);
+    if (!startRoom) return null;
+    startNodeId = 'door_' + startRoom.id;
+  }
+
+  const destRoom = ALL_ROOMS.find(r => r.id === destRoomId);
+  if (!startRoom || !destRoom || startRoom.id === destRoom.id) {
+    if (customCleanup) customCleanup();
+    return null;
+  }
 
   // Case 1: Same Floor Navigation
   if (startRoom.floor === destRoom.floor) {
     const fId = startRoom.floor;
-    const res = dijkstraSingleFloor(fId, 'door_' + startRoomId, 'door_' + destRoomId);
-    if (!res) return null;
+    const res = dijkstraSingleFloor(fId, startNodeId, 'door_' + destRoomId);
+    if (!res) {
+      if (customCleanup) customCleanup();
+      return null;
+    }
 
     const leg = buildRouteLeg(fId, startRoom, destRoom, res.path, true, true);
     const steps = generateSteps(fId, startRoom, destRoom, res.path);
+    if (customCleanup) customCleanup();
 
     const walkingTimeSeconds = Math.round(leg.distanceMeters / 1.2);
     const minutes = Math.floor(walkingTimeSeconds / 60);
@@ -1290,7 +1370,7 @@ function findRoute(startRoomId, destRoomId) {
     const nodeStart = (fStart === 0) ? st.f0Node : st.f2Node;
     const nodeDest = (fDest === 0) ? st.f0Node : st.f2Node;
 
-    const res1 = dijkstraSingleFloor(fStart, 'door_' + startRoomId, nodeStart);
+    const res1 = dijkstraSingleFloor(fStart, startNodeId, nodeStart);
     const res2 = dijkstraSingleFloor(fDest, nodeDest, 'door_' + destRoomId);
 
     if (res1 && res2) {
@@ -1305,7 +1385,10 @@ function findRoute(startRoomId, destRoomId) {
     }
   });
 
-  if (!bestStair) return null;
+  if (!bestStair) {
+    if (customCleanup) customCleanup();
+    return null;
+  }
 
   const nodeStartStair = (fStart === 0) ? bestStair.f0Node : bestStair.f2Node;
   const nodeDestStair = (fDest === 0) ? bestStair.f0Node : bestStair.f2Node;
@@ -1331,6 +1414,7 @@ function findRoute(startRoomId, destRoomId) {
 
   const steps2 = generateSteps(fDest, fakeStairRoomDest, destRoom, bestRes2.path);
   const combinedSteps = [...steps1, ...steps2.slice(1)];
+  if (customCleanup) customCleanup();
 
   const totalDist = leg1.distanceMeters + leg2.distanceMeters + 15;
   const walkingTimeSeconds = Math.round(totalDist / 1.1);
@@ -1356,9 +1440,13 @@ function findRoute(startRoomId, destRoomId) {
 function generateSteps(floorId, startRoom, destRoom, path) {
   const fData = FLOORS_DATA[floorId];
   const steps = [];
+  const departText = (startRoom.id === 'USER_LOCATION' || (appState.userLocation && startRoom.id === appState.userLocation.roomId))
+    ? `Depart from your location (${startRoom.name}) into hallway`
+    : `Depart from ${startRoom.name} into hallway`;
+
   steps.push({
     action: 'Depart',
-    instruction: `Depart from ${startRoom.name} into hallway`,
+    instruction: departText,
     distance: 0
   });
 
@@ -1652,6 +1740,9 @@ function switchFloor(floorNumber, preserveView = true) {
   // Render SVG Layers for new floor
   renderFloor(floorNumber);
 
+  // Render User Location Marker on active floor
+  renderUserLocationPin();
+
   // If a route exists, refresh its rendering on the new floor
   if (appState.currentRoute) {
     renderActiveRouteGraphics();
@@ -1759,6 +1850,18 @@ class SvgViewport {
     this.updateViewBox();
   }
 
+  focusPoint(x, y, zoomWidth = 260) {
+    const targetW = zoomWidth;
+    const targetH = targetW * (this.base.h / this.base.w);
+    this.current = {
+      x: x - targetW / 2,
+      y: y - targetH / 2,
+      w: targetW,
+      h: targetH
+    };
+    this.updateViewBox();
+  }
+
   focusRoom(room) {
     const targetW = Math.max(room.w * 3.5, 240);
     const targetH = targetW * (this.base.h / this.base.w);
@@ -1854,20 +1957,34 @@ function showRoomDetailCard(room) {
 
   document.getElementById('btnNavigateTo').onclick = () => {
     card.style.display = 'none';
-    switchTab('directions');
-    const destSel = document.getElementById('destRoomSelect');
-    if (destSel) destSel.value = room.id;
-    appState.destRoomId = room.id;
-    calculateAndRenderRoute();
+    if (appState.userLocation) {
+      switchTab('directions');
+      appState.startRoomId = 'USER_LOCATION';
+      appState.destRoomId = room.id;
+      const startSel = document.getElementById('startRoomSelect');
+      const destSel = document.getElementById('destRoomSelect');
+      if (startSel) startSel.value = 'USER_LOCATION';
+      if (destSel) destSel.value = room.id;
+      calculateAndRenderRoute();
+      showToast(`Navigating from ${appState.userLocation.name} to ${room.name}`);
+    } else {
+      openLocationModal(room.id);
+    }
   };
 
   document.getElementById('btnNavigateFrom').onclick = () => {
     card.style.display = 'none';
+    setUserLocation({
+      type: 'room',
+      roomId: room.id,
+      name: room.name,
+      code: room.code,
+      wing: room.wing,
+      floor: room.floor,
+      x: room.door ? room.door[0] : room.cx,
+      y: room.door ? room.door[1] : room.cy
+    });
     switchTab('directions');
-    const startSel = document.getElementById('startRoomSelect');
-    if (startSel) startSel.value = room.id;
-    appState.startRoomId = room.id;
-    calculateAndRenderRoute();
   };
 
   card.style.display = 'block';
@@ -1950,21 +2067,44 @@ function populateDropdowns() {
   const f0Rooms = FLOORS_DATA[0].rooms.slice().sort((a, b) => a.code.localeCompare(b.code));
   const f2Rooms = FLOORS_DATA[2].rooms.slice().sort((a, b) => a.code.localeCompare(b.code));
 
-  let optionsHtml = '<option value="">Select location...</option>';
-  optionsHtml += '<optgroup label="Ground Floor">';
+  let startOptionsHtml = '<option value="">Select start location...</option>';
+  if (appState.userLocation) {
+    startOptionsHtml += `<option value="USER_LOCATION">📍 My Location (${appState.userLocation.name})</option>`;
+  } else {
+    startOptionsHtml += `<option value="SET_LOCATION">📍 Set My Location...</option>`;
+  }
+  startOptionsHtml += '<optgroup label="Ground Floor">';
   f0Rooms.forEach(r => {
-    optionsHtml += `<option value="${r.id}">${r.code} - ${r.name}</option>`;
+    startOptionsHtml += `<option value="${r.id}">${r.code} - ${r.name}</option>`;
   });
-  optionsHtml += '</optgroup>';
-
-  optionsHtml += '<optgroup label="Second Floor (2nd FL)">';
+  startOptionsHtml += '</optgroup>';
+  startOptionsHtml += '<optgroup label="Second Floor (2nd FL)">';
   f2Rooms.forEach(r => {
-    optionsHtml += `<option value="${r.id}">${r.code} - ${r.name}</option>`;
+    startOptionsHtml += `<option value="${r.id}">${r.code} - ${r.name}</option>`;
   });
-  optionsHtml += '</optgroup>';
+  startOptionsHtml += '</optgroup>';
 
-  startSelect.innerHTML = optionsHtml;
-  destSelect.innerHTML = optionsHtml;
+  let destOptionsHtml = '<option value="">Select destination room...</option>';
+  destOptionsHtml += '<optgroup label="Ground Floor">';
+  f0Rooms.forEach(r => {
+    destOptionsHtml += `<option value="${r.id}">${r.code} - ${r.name}</option>`;
+  });
+  destOptionsHtml += '</optgroup>';
+  destOptionsHtml += '<optgroup label="Second Floor (2nd FL)">';
+  f2Rooms.forEach(r => {
+    destOptionsHtml += `<option value="${r.id}">${r.code} - ${r.name}</option>`;
+  });
+  destOptionsHtml += '</optgroup>';
+
+  startSelect.innerHTML = startOptionsHtml;
+  destSelect.innerHTML = destOptionsHtml;
+
+  if (appState.startRoomId) {
+    startSelect.value = appState.startRoomId;
+  }
+  if (appState.destRoomId) {
+    destSelect.value = appState.destRoomId;
+  }
 }
 
 // ==========================================================================
@@ -2411,6 +2551,468 @@ function setupFloorSwitcher() {
 }
 
 // ==========================================================================
+// 7B. USER LOCATION MANAGEMENT & MAP PINPOINTING
+// ==========================================================================
+function renderUserLocationPin() {
+  const pin = document.getElementById('svgUserLocationPin');
+  if (!pin) return;
+
+  const uLoc = appState.userLocation;
+  if (!uLoc || uLoc.floor !== appState.currentFloor) {
+    pin.style.display = 'none';
+    return;
+  }
+
+  pin.setAttribute('transform', `translate(${uLoc.x}, ${uLoc.y})`);
+  pin.style.display = 'block';
+}
+
+function setUserLocation(loc, shouldSave = true, silent = false) {
+  appState.userLocation = loc;
+  if (shouldSave) {
+    try {
+      localStorage.setItem('amritanav_user_location', JSON.stringify(loc));
+    } catch (e) {
+      console.warn('Could not save user location to localStorage', e);
+    }
+  }
+
+  // Update Toolbar Pill
+  const pillLabel = document.getElementById('userLocationBtnLabel');
+  const pillDot = document.querySelector('.user-loc-pulse-dot');
+  if (pillLabel) {
+    pillLabel.innerHTML = `Your Location: <strong>${loc.name}</strong>`;
+  }
+  if (pillDot) {
+    pillDot.classList.remove('unset');
+  }
+
+  // Update Directions Section Banner
+  const dirTitle = document.getElementById('dirLocTitle');
+  const dirSub = document.getElementById('dirLocSub');
+  const dirBtn = document.getElementById('dirLocActionBtn');
+  const dirDot = document.querySelector('.dir-loc-dot');
+  if (dirTitle) dirTitle.textContent = 'Your Starting Point';
+  if (dirSub) dirSub.textContent = `📍 ${loc.name} (${loc.floor === 0 ? 'Ground Fl' : '2nd Fl'})`;
+  if (dirBtn) dirBtn.textContent = 'Change';
+  if (dirDot) dirDot.classList.remove('unset');
+
+  // Update Map Pin
+  renderUserLocationPin();
+
+  // Update Dropdowns
+  populateDropdowns();
+
+  // Default start location to USER_LOCATION
+  appState.startRoomId = 'USER_LOCATION';
+  const startSel = document.getElementById('startRoomSelect');
+  if (startSel) startSel.value = 'USER_LOCATION';
+
+  // Handle pending navigation if user clicked "Directions Here" before setting location
+  if (appState.pendingDestinationId) {
+    const targetRoomId = appState.pendingDestinationId;
+    appState.pendingDestinationId = null;
+    switchTab('directions');
+    appState.destRoomId = targetRoomId;
+    const destSel = document.getElementById('destRoomSelect');
+    if (destSel) destSel.value = targetRoomId;
+    calculateAndRenderRoute();
+  } else if (appState.activeTab === 'directions' && appState.destRoomId) {
+    calculateAndRenderRoute();
+  }
+
+  const myLocFab = document.getElementById('myLocationFabBtn');
+  if (myLocFab) myLocFab.classList.add('active');
+
+  if (!silent) {
+    showToast(`📍 Location set: ${loc.name}`);
+  }
+}
+
+function openLocationModal(pendingDestId = null) {
+  if (pendingDestId) {
+    appState.pendingDestinationId = pendingDestId;
+  }
+  const modal = document.getElementById('userLocationModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  populateLandmarkGrid();
+
+  const searchInput = document.getElementById('locSearchInput');
+  if (searchInput) {
+    searchInput.value = '';
+    const clearBtn = document.getElementById('clearLocSearchBtn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    const resEl = document.getElementById('locSearchResults');
+    if (resEl) resEl.style.display = 'none';
+    const popSec = document.getElementById('locPopularSection');
+    if (popSec) popSec.style.display = 'block';
+    setTimeout(() => searchInput.focus(), 80);
+  }
+}
+
+function closeLocationModal() {
+  const modal = document.getElementById('userLocationModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function populateLandmarkGrid() {
+  const grid = document.getElementById('locLandmarkGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  POPULAR_LANDMARKS.forEach(lm => {
+    const room = ALL_ROOMS.find(r => r.id === lm.id);
+    if (!room) return;
+
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'landmark-card';
+    if (appState.userLocation && appState.userLocation.roomId === lm.id) {
+      card.classList.add('active');
+    }
+
+    card.innerHTML = `
+      <span class="landmark-card-code">${lm.code}</span>
+      <span class="landmark-card-name">${lm.name}</span>
+      <span class="landmark-card-floor">${lm.wing} • ${lm.floor === 0 ? 'Ground' : '2nd Fl'}</span>
+    `;
+
+    card.addEventListener('click', () => {
+      setUserLocation({
+        type: 'room',
+        roomId: room.id,
+        name: room.name,
+        code: room.code,
+        wing: room.wing,
+        floor: room.floor,
+        x: room.door ? room.door[0] : room.cx,
+        y: room.door ? room.door[1] : room.cy
+      });
+      closeLocationModal();
+      if (room.floor !== appState.currentFloor) {
+        switchFloor(room.floor);
+      }
+      if (viewport) {
+        viewport.focusRoom(room);
+      }
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function setupLocationModalSearch() {
+  const searchInput = document.getElementById('locSearchInput');
+  const clearBtn = document.getElementById('clearLocSearchBtn');
+  const resEl = document.getElementById('locSearchResults');
+  const popSec = document.getElementById('locPopularSection');
+  if (!searchInput || !resEl) return;
+
+  function renderModalResults(q) {
+    const query = q.trim().toLowerCase();
+    if (!query) {
+      resEl.style.display = 'none';
+      if (popSec) popSec.style.display = 'block';
+      if (clearBtn) clearBtn.style.display = 'none';
+      return;
+    }
+
+    if (clearBtn) clearBtn.style.display = 'block';
+    if (popSec) popSec.style.display = 'none';
+    resEl.style.display = 'flex';
+
+    const matches = ALL_ROOMS.filter(r =>
+      r.code.toLowerCase().includes(query) ||
+      r.name.toLowerCase().includes(query) ||
+      r.wing.toLowerCase().includes(query) ||
+      r.desc.toLowerCase().includes(query)
+    ).slice(0, 10);
+
+    if (matches.length === 0) {
+      resEl.innerHTML = `
+        <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
+          No location found for "${query}".
+        </div>
+      `;
+      return;
+    }
+
+    resEl.innerHTML = '';
+    matches.forEach(room => {
+      const item = document.createElement('div');
+      item.className = 'loc-result-item';
+      item.tabIndex = 0;
+      item.role = 'button';
+      item.innerHTML = `
+        <div class="loc-result-left">
+          <span class="loc-result-code">${room.code}</span>
+          <div class="loc-result-info">
+            <span class="loc-result-name">${room.name}</span>
+            <span class="loc-result-sub">${room.wing} • ${room.floor === 0 ? 'Ground' : '2nd Floor'}</span>
+          </div>
+        </div>
+        <span style="font-size: 0.7rem; font-weight: 700; color: #06b6d4;">Select &rarr;</span>
+      `;
+
+      item.addEventListener('click', () => {
+        setUserLocation({
+          type: 'room',
+          roomId: room.id,
+          name: room.name,
+          code: room.code,
+          wing: room.wing,
+          floor: room.floor,
+          x: room.door ? room.door[0] : room.cx,
+          y: room.door ? room.door[1] : room.cy
+        });
+        closeLocationModal();
+        if (room.floor !== appState.currentFloor) {
+          switchFloor(room.floor);
+        }
+        if (viewport) {
+          viewport.focusRoom(room);
+        }
+      });
+
+      resEl.appendChild(item);
+    });
+  }
+
+  searchInput.addEventListener('input', (e) => {
+    renderModalResults(e.target.value);
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      renderModalResults('');
+      searchInput.focus();
+    });
+  }
+}
+
+function enablePinpointMode() {
+  closeLocationModal();
+  appState.isPinpointing = true;
+  document.body.classList.add('pinpointing-mode');
+  const banner = document.getElementById('pinpointBanner');
+  if (banner) banner.style.display = 'flex';
+  showToast('Click anywhere on the floor plan to set your location');
+}
+
+function disablePinpointMode() {
+  appState.isPinpointing = false;
+  document.body.classList.remove('pinpointing-mode');
+  const banner = document.getElementById('pinpointBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+// ==========================================================================
+// 7C. GEOGRAPHIC CAMPUS GPS PROJECTION & ACCURATE AUTO-DETECT
+// ==========================================================================
+const CAMPUS_GPS = {
+  lat: 9.0945,      // Latitude of Main Entrance Porch (GAD-PR)
+  lng: 76.4918,     // Longitude of Main Entrance Porch (GAD-PR)
+  svgX: 374,        // SVG X of GAD-PR entrance door
+  svgY: 810,        // SVG Y of GAD-PR entrance door
+  mPerDegLat: 111139,
+  mPerDegLng: 109742,
+  svgUnitsPerMeter: 2.5 // 1 SVG unit ≈ 0.4 m -> 2.5 SVG units per meter
+};
+
+function haversineDistMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Earth radius in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+let locationWatchId = null;
+function startLocationWatcher() {
+  if (!navigator.geolocation || locationWatchId !== null) return;
+  locationWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const distFromCampus = haversineDistMeters(pos.coords.latitude, pos.coords.longitude, CAMPUS_GPS.lat, CAMPUS_GPS.lng);
+      if (distFromCampus <= 1500) {
+        processGPSCoords(pos.coords, true);
+      }
+    },
+    (err) => {
+      console.warn('WatchPosition notification:', err.message);
+    },
+    { enableHighAccuracy: true, maximumAge: 6000 }
+  );
+}
+
+function processGPSCoords(coords, isUpdate = false) {
+  const lat = coords.latitude;
+  const lng = coords.longitude;
+  const acc = Math.round(coords.accuracy || 8);
+  const distFromCampus = haversineDistMeters(lat, lng, CAMPUS_GPS.lat, CAMPUS_GPS.lng);
+
+  if (distFromCampus <= 1500) {
+    // User is on or adjacent to Amritapuri Campus!
+    const dNorth = (lat - CAMPUS_GPS.lat) * CAMPUS_GPS.mPerDegLat;
+    const dEast = (lng - CAMPUS_GPS.lng) * CAMPUS_GPS.mPerDegLng;
+    let svgX = Math.round(CAMPUS_GPS.svgX + dEast * CAMPUS_GPS.svgUnitsPerMeter);
+    let svgY = Math.round(CAMPUS_GPS.svgY - dNorth * CAMPUS_GPS.svgUnitsPerMeter);
+
+    // Clamp within campus building limits
+    svgX = Math.max(50, Math.min(svgX, 680));
+    svgY = Math.max(100, Math.min(svgY, 950));
+
+    // Find nearest walkable waypoint
+    const f0 = FLOORS_DATA[0];
+    let nearestWp = null;
+    let minD = Infinity;
+    Object.entries(f0.waypoints).forEach(([id, wp]) => {
+      if (id.startsWith('door_') || id.startsWith('wp_outdoor')) return;
+      const d = Math.hypot(svgX - wp.x, svgY - wp.y);
+      if (d < minD) {
+        minD = d;
+        nearestWp = wp;
+      }
+    });
+
+    setUserLocation({
+      type: 'custom',
+      name: `Live GPS Location (±${acc}m)`,
+      floor: 0,
+      x: svgX,
+      y: svgY,
+      nearestWaypointId: nearestWp ? nearestWp.id : 'wp_north_exit_hub',
+      accuracy: acc
+    }, true, isUpdate);
+
+    if (viewport && !isUpdate) {
+      viewport.focusPoint(svgX, svgY, 260);
+    }
+    if (!isUpdate) {
+      showToast(`📍 Live Location Detected (Accuracy ±${acc}m)`);
+    }
+  } else {
+    // User is outside campus (remote / testing)
+    const distKm = (distFromCampus / 1000).toFixed(1);
+    const defaultRoom = ALL_ROOMS.find(r => r.id === 'GAD-PR');
+    if (defaultRoom) {
+      setUserLocation({
+        type: 'room',
+        roomId: defaultRoom.id,
+        name: `Main Entrance (GPS: ${distKm} km away)`,
+        code: defaultRoom.code,
+        wing: defaultRoom.wing,
+        floor: defaultRoom.floor,
+        x: defaultRoom.door[0],
+        y: defaultRoom.door[1],
+        accuracy: acc
+      });
+      if (viewport && !isUpdate) {
+        viewport.focusPoint(defaultRoom.door[0], defaultRoom.door[1], 280);
+      }
+    }
+    showToast(`📍 GPS Connected (${distKm} km from campus). Start set to Main Entrance.`);
+  }
+
+  const fab = document.getElementById('myLocationFabBtn');
+  if (fab) fab.classList.add('active');
+}
+
+function fallbackToCampusEntrance() {
+  const defaultRoom = ALL_ROOMS.find(r => r.id === 'GAD-PR');
+  if (defaultRoom) {
+    setUserLocation({
+      type: 'room',
+      roomId: defaultRoom.id,
+      name: `${defaultRoom.name} (Default)`,
+      code: defaultRoom.code,
+      wing: defaultRoom.wing,
+      floor: defaultRoom.floor,
+      x: defaultRoom.door[0],
+      y: defaultRoom.door[1]
+    });
+    if (viewport) {
+      viewport.focusPoint(defaultRoom.door[0], defaultRoom.door[1], 280);
+    }
+  }
+}
+
+function showPermissionNotice(reason = 'denied') {
+  const notice = document.getElementById('locPermissionNotice');
+  const title = document.getElementById('locNoticeTitle');
+  const desc = document.getElementById('locNoticeDesc');
+  if (!notice) return;
+
+  notice.style.display = 'block';
+
+  if (reason === 'file_protocol') {
+    if (title) title.textContent = 'Browser Security: file:// Protocol';
+    if (desc) desc.innerHTML = 'Chrome and Edge block live GPS sensors when opening HTML directly from a folder (<code>file://</code>). Run via a local server (<code>http://localhost:8000</code>) or tap below to test with simulated campus GPS!';
+  } else if (reason === 'denied') {
+    if (title) title.textContent = 'Location Permission Was Blocked';
+    if (desc) desc.innerHTML = 'Location permission is currently blocked in your browser. To unblock: click the <strong>Tune / Lock icon (⚙️)</strong> to the left of the URL bar &rarr; set <strong>Location to "Allow"</strong> &rarr; reload. Or tap below to simulate your location immediately!';
+  } else {
+    if (title) title.textContent = 'GPS Signal Unavailable';
+    if (desc) desc.innerHTML = 'Could not acquire satellite fix (low indoor signal or timed out). Tap below to simulate your location at the Main Entrance or pinpoint anywhere on the map.';
+  }
+}
+
+function handleAutoDetectGPS(userInitiated = false) {
+  const fab = document.getElementById('myLocationFabBtn');
+  if (fab) fab.classList.add('tracking');
+
+  // Detect file:// protocol restriction in modern browsers
+  if (window.location.protocol === 'file:') {
+    if (fab) fab.classList.remove('tracking');
+    console.warn('Note: Browsers block Geolocation API under file:// protocol. Local server recommended.');
+    showToast('Browsers block GPS on file://. Opening location helper...');
+    openLocationModal();
+    showPermissionNotice('file_protocol');
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    if (fab) fab.classList.remove('tracking');
+    showToast('GPS geolocation is not supported on this device/browser.');
+    openLocationModal();
+    showPermissionNotice('unavailable');
+    return;
+  }
+
+  if (userInitiated) {
+    showToast('Requesting GPS location...');
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      if (fab) fab.classList.remove('tracking');
+      processGPSCoords(pos.coords, false);
+      closeLocationModal();
+      startLocationWatcher();
+    },
+    (err) => {
+      if (fab) fab.classList.remove('tracking');
+      console.warn('Geolocation error / denied:', err.code, err.message);
+
+      if (err.code === 1) { // PERMISSION_DENIED
+        showToast('Location permission denied. Tap to simulate or allow in settings.');
+        openLocationModal();
+        showPermissionNotice('denied');
+      } else {
+        showToast('Indoor GPS signal low. Defaulted to Main Entrance (Reception).');
+        fallbackToCampusEntrance();
+        openLocationModal();
+        showPermissionNotice('unavailable');
+      }
+    },
+    { enableHighAccuracy: true, timeout: 9000, maximumAge: 0 }
+  );
+}
+
+// ==========================================================================
 // 8. LIFECYCLE & DOM EVENT BINDINGS
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -2499,6 +3101,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (startSelect) {
     startSelect.addEventListener('change', (e) => {
+      if (e.target.value === 'SET_LOCATION') {
+        openLocationModal();
+        startSelect.value = appState.startRoomId || '';
+        return;
+      }
       appState.startRoomId = e.target.value;
       calculateAndRenderRoute();
     });
@@ -2614,4 +3221,166 @@ document.addEventListener('DOMContentLoaded', () => {
       navSidebar.classList.toggle('collapsed');
     });
   }
+
+  // ==========================================================================
+  // USER LOCATION SYSTEM EVENT LISTENERS & PINPOINTING
+  // ==========================================================================
+  setupLocationModalSearch();
+
+  const userLocBtn = document.getElementById('userLocationBtn');
+  if (userLocBtn) userLocBtn.addEventListener('click', () => openLocationModal());
+
+  const closeLocBtn = document.getElementById('closeLocModalBtn');
+  if (closeLocBtn) closeLocBtn.addEventListener('click', closeLocationModal);
+
+  const dirLocBtn = document.getElementById('dirLocActionBtn');
+  if (dirLocBtn) dirLocBtn.addEventListener('click', () => openLocationModal());
+
+  // Floating Google Maps 'My Location' FAB
+  const myLocationFab = document.getElementById('myLocationFabBtn');
+  if (myLocationFab) {
+    myLocationFab.addEventListener('click', () => {
+      if (appState.userLocation) {
+        if (appState.userLocation.floor !== appState.currentFloor) {
+          switchFloor(appState.userLocation.floor);
+        }
+        if (viewport) {
+          viewport.focusPoint(appState.userLocation.x, appState.userLocation.y, 250);
+        }
+        showToast(`📍 Centered on ${appState.userLocation.name}`);
+        handleAutoDetectGPS(true);
+      } else {
+        handleAutoDetectGPS(true);
+      }
+    });
+  }
+
+  const useMyLocBtn = document.getElementById('useMyLocationQuickBtn');
+  if (useMyLocBtn) {
+    useMyLocBtn.addEventListener('click', () => {
+      if (appState.userLocation) {
+        appState.startRoomId = 'USER_LOCATION';
+        if (startSelect) startSelect.value = 'USER_LOCATION';
+        calculateAndRenderRoute();
+        showToast(`📍 Start set to ${appState.userLocation.name}`);
+      } else {
+        openLocationModal();
+      }
+    });
+  }
+
+  // Simulate Campus Location from Notice
+  const btnSimCampus = document.getElementById('btnSimulateCampusLoc');
+  if (btnSimCampus) {
+    btnSimCampus.addEventListener('click', () => {
+      closeLocationModal();
+      processGPSCoords({ latitude: 9.0945, longitude: 76.4918, accuracy: 8 }, false);
+      showToast('📍 Simulated GPS Location at Amrita Main Entrance (GAD)');
+    });
+  }
+
+  const btnPinpointNotice = document.getElementById('btnPinpointFromNotice');
+  if (btnPinpointNotice) {
+    btnPinpointNotice.addEventListener('click', enablePinpointMode);
+  }
+
+  const btnPinpoint = document.getElementById('btnPinpointOnMap');
+  if (btnPinpoint) btnPinpoint.addEventListener('click', enablePinpointMode);
+
+  const cancelPinpoint = document.getElementById('cancelPinpointBtn');
+  if (cancelPinpoint) cancelPinpoint.addEventListener('click', disablePinpointMode);
+
+  const btnGps = document.getElementById('btnAutoDetectLoc');
+  if (btnGps) btnGps.addEventListener('click', handleAutoDetectGPS);
+
+  const locModal = document.getElementById('userLocationModal');
+  if (locModal) {
+    locModal.addEventListener('click', (e) => {
+      if (e.target === locModal) closeLocationModal();
+    });
+  }
+
+  // Pinpoint Click Listener on SVG Map
+  if (mapSvg) {
+    mapSvg.addEventListener('click', (e) => {
+      if (!appState.isPinpointing) return;
+
+      const pt = mapSvg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const ctm = mapSvg.getScreenCTM();
+      if (!ctm) return;
+      const svgP = pt.matrixTransform(ctm.inverse());
+      const curFloor = appState.currentFloor;
+      const fData = FLOORS_DATA[curFloor];
+      if (!fData) return;
+
+      // Check if clicked inside a room
+      let insideRoom = null;
+      fData.rooms.forEach(r => {
+        if (svgP.x >= r.x && svgP.x <= r.x + r.w && svgP.y >= r.y && svgP.y <= r.y + r.h) {
+          insideRoom = r;
+        }
+      });
+
+      // Find nearest walkable corridor waypoint
+      let nearestWp = null;
+      let minWpDist = Infinity;
+      Object.entries(fData.waypoints).forEach(([id, wp]) => {
+        if (id.startsWith('door_') || id.startsWith('wp_outdoor')) return;
+        const d = Math.hypot(svgP.x - wp.x, svgP.y - wp.y);
+        if (d < minWpDist) {
+          minWpDist = d;
+          nearestWp = wp;
+        }
+      });
+
+      disablePinpointMode();
+
+      if (insideRoom) {
+        setUserLocation({
+          type: 'room',
+          roomId: insideRoom.id,
+          name: insideRoom.name,
+          code: insideRoom.code,
+          wing: insideRoom.wing,
+          floor: insideRoom.floor,
+          x: insideRoom.door ? insideRoom.door[0] : insideRoom.cx,
+          y: insideRoom.door ? insideRoom.door[1] : insideRoom.cy
+        });
+        showToast(`📍 Set location to ${insideRoom.name}`);
+      } else {
+        const wpLabel = nearestWp ? nearestWp.label : 'Corridor';
+        setUserLocation({
+          type: 'custom',
+          name: `Near ${wpLabel}`,
+          floor: curFloor,
+          x: Math.round(svgP.x),
+          y: Math.round(svgP.y),
+          nearestWaypointId: nearestWp ? nearestWp.id : 'wp_north_exit_hub'
+        });
+        showToast(`📍 Pinpointed location near ${wpLabel}`);
+      }
+    });
+  }
+
+  // Load Saved Location or Prompt on First Visit
+  try {
+    const saved = localStorage.getItem('amritanav_user_location');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && (parsed.roomId || parsed.type === 'custom')) {
+        setUserLocation(parsed, false, true);
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load saved location', err);
+  }
+
+  // Auto-request location permission like Google Maps on initial load
+  setTimeout(() => {
+    if (!appState.userLocation && !appState.currentRoute) {
+      handleAutoDetectGPS(false);
+    }
+  }, 500);
 });

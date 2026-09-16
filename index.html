@@ -80,6 +80,16 @@
           <circle cx="0" cy="0" r="6" class="stair-pin-core" />
           <text id="svgStairPinText" x="0" y="2.5" class="stair-pin-icon" text-anchor="middle">▲</text>
         </g>
+        <!-- Google Maps-style Live User Location Marker -->
+        <g id="svgUserLocationPin" class="route-pin user-location" style="display: none;">
+          <circle cx="0" cy="0" r="18" class="user-beacon-ripple" />
+          <circle cx="0" cy="0" r="11" class="user-beacon-halo" />
+          <circle cx="0" cy="0" r="6" class="user-beacon-core" />
+          <g transform="translate(0, -18)">
+            <rect x="-24" y="-8" width="48" height="15" rx="7.5" class="user-badge-bg" />
+            <text x="0" y="2.5" class="user-badge-text" text-anchor="middle">YOU</text>
+          </g>
+        </g>
       </g>
     </svg>
   </main>
@@ -140,6 +150,14 @@
       </button>
     </div>
 
+    <!-- User Location Status Pill -->
+    <div class="glass-pill-bar user-loc-bar">
+      <button id="userLocationBtn" class="pill-btn user-loc-pill" title="Click to view or set your current location">
+        <span class="user-loc-pulse-dot unset"></span>
+        <span id="userLocationBtnLabel" class="user-loc-label">Your Location: <strong>Not Set</strong></span>
+      </button>
+    </div>
+
     <!-- Quick Tools: Legend, Graph, Recenter -->
     <div class="glass-pill-bar">
       <button id="toggleLegendBtn" class="pill-btn" title="Toggle Map Legend">
@@ -166,6 +184,15 @@
       </button>
     </div>
   </header>
+
+  <!-- Map Pinpoint Mode Floating Banner -->
+  <div id="pinpointBanner" class="pinpoint-banner" style="display: none;">
+    <div class="pinpoint-banner-content">
+      <span class="pinpoint-pulse"></span>
+      <span>Click anywhere on the floor plan to set your location</span>
+    </div>
+    <button id="cancelPinpointBtn" class="pinpoint-cancel-btn">Cancel</button>
+  </div>
 
   <!-- Multi-Floor Route Journey Bar (Shown when a multi-floor route is active) -->
   <div id="multiFloorJourneyBar" class="multi-floor-journey-bar" style="display: none;">
@@ -202,10 +229,22 @@
     </div>
   </div>
 
-  <!-- ================= 4. FLOATING ZOOM CONTROLS ================= -->
-  <div class="zoom-controls">
-    <button id="zoomInBtn" class="zoom-btn" title="Zoom In" aria-label="Zoom In">+</button>
-    <button id="zoomOutBtn" class="zoom-btn" title="Zoom Out" aria-label="Zoom Out">&minus;</button>
+  <!-- ================= 4. FLOATING MAP ACTION CONTROLS ================= -->
+  <div class="map-action-controls">
+    <button id="myLocationFabBtn" class="my-location-fab" title="My Location (Google Maps GPS)" aria-label="Show My Location">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="7"></circle>
+        <line x1="12" y1="1" x2="12" y2="4"></line>
+        <line x1="12" y1="20" x2="12" y2="23"></line>
+        <line x1="1" y1="12" x2="4" y2="12"></line>
+        <line x1="20" y1="12" x2="23" y2="12"></line>
+        <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
+      </svg>
+    </button>
+    <div class="zoom-controls">
+      <button id="zoomInBtn" class="zoom-btn" title="Zoom In" aria-label="Zoom In">+</button>
+      <button id="zoomOutBtn" class="zoom-btn" title="Zoom Out" aria-label="Zoom Out">&minus;</button>
+    </div>
   </div>
 
   <!-- ================= 5. FLOATING SIDEBAR PANEL ================= -->
@@ -324,6 +363,18 @@
 
       <!-- DIRECTIONS SECTION -->
       <section id="directionsSection" class="directions-panel" style="display: none;">
+        <!-- User Location Status / Switcher Banner in Directions -->
+        <div class="directions-loc-banner">
+          <div class="dir-loc-info">
+            <span class="dir-loc-dot unset"></span>
+            <div class="dir-loc-text-col">
+              <span id="dirLocTitle" class="dir-loc-title">Your Location</span>
+              <span id="dirLocSub" class="dir-loc-sub">Not set &bull; Tap to assign</span>
+            </div>
+          </div>
+          <button id="dirLocActionBtn" class="dir-loc-btn" title="Set or change your location">Set Location</button>
+        </div>
+
         <div class="route-inputs-card">
           <div class="route-row">
             <span class="route-dot start" title="Starting Point"></span>
@@ -332,6 +383,16 @@
                 <option value="">Select start location...</option>
               </select>
             </div>
+            <button id="useMyLocationQuickBtn" class="quick-loc-btn" title="Use My Location as Start Point" aria-label="Use My Location">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="7"></circle>
+                <line x1="12" y1="1" x2="12" y2="4"></line>
+                <line x1="12" y1="20" x2="12" y2="23"></line>
+                <line x1="1" y1="12" x2="4" y2="12"></line>
+                <line x1="20" y1="12" x2="23" y2="12"></line>
+                <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
+              </svg>
+            </button>
           </div>
 
           <div class="route-row">
@@ -391,6 +452,107 @@
 
     </div>
   </aside>
+
+  <!-- ================= 6. USER LOCATION PERMISSION & SELECTION MODAL ================= -->
+  <div id="userLocationModal" class="location-modal-backdrop" style="display: none;">
+    <div class="location-modal-card" role="dialog" aria-labelledby="locModalTitle" aria-modal="true">
+      <header class="loc-modal-header">
+        <div class="loc-header-title-box">
+          <div class="loc-header-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="7"></circle>
+              <line x1="12" y1="1" x2="12" y2="4"></line>
+              <line x1="12" y1="20" x2="12" y2="23"></line>
+              <line x1="1" y1="12" x2="4" y2="12"></line>
+              <line x1="20" y1="12" x2="23" y2="12"></line>
+              <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
+            </svg>
+          </div>
+          <div>
+            <h2 id="locModalTitle" class="loc-modal-title">Where are you right now?</h2>
+            <p class="loc-modal-sub">Enable location permission or pick where you are on campus</p>
+          </div>
+        </div>
+        <button id="closeLocModalBtn" class="modal-close-btn" title="Close" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+
+      <!-- Permission Denied / File Protocol Notice Banner -->
+      <div id="locPermissionNotice" class="loc-permission-notice" style="display: none;">
+        <div class="loc-notice-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span id="locNoticeTitle" class="loc-notice-title">Location Permission Blocked</span>
+        </div>
+        <p id="locNoticeDesc" class="loc-notice-desc">
+          Your browser blocked GPS access or is running under <code>file://</code> protocol. Tap <strong>Simulate Location</strong> to test with live demo coordinates, or allow location in your browser site settings.
+        </p>
+        <div class="loc-notice-actions">
+          <button id="btnSimulateCampusLoc" class="loc-notice-btn primary">
+            📍 Simulate at Main Entrance
+          </button>
+          <button id="btnPinpointFromNotice" class="loc-notice-btn secondary">
+            🎯 Pinpoint on Map
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons: Auto-Detect GPS & Pinpoint -->
+      <div class="loc-quick-actions">
+        <button id="btnAutoDetectLoc" class="loc-action-btn gps" title="Use GPS Location">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="7"></circle>
+            <line x1="12" y1="1" x2="12" y2="4"></line>
+            <line x1="12" y1="20" x2="12" y2="23"></line>
+            <line x1="1" y1="12" x2="4" y2="12"></line>
+            <line x1="20" y1="12" x2="23" y2="12"></line>
+            <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
+          </svg>
+          <div>
+            <strong>Use Precise GPS</strong>
+            <small>Google Maps style auto-detect</small>
+          </div>
+        </button>
+
+        <button id="btnPinpointOnMap" class="loc-action-btn pinpoint" title="Pinpoint on map">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <div>
+            <strong>Pinpoint on Map</strong>
+            <small>Tap your spot on floor plan</small>
+          </div>
+        </button>
+      </div>
+
+      <!-- Search Box inside Modal -->
+      <div class="loc-search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input id="locSearchInput" class="search-input" type="text" placeholder="Or search your room, lab, or hall..." autocomplete="off" />
+        <button id="clearLocSearchBtn" class="clear-btn" style="display: none;">&times;</button>
+      </div>
+
+      <!-- Dynamic Search Suggestions Results -->
+      <div id="locSearchResults" class="loc-search-results" style="display: none;"></div>
+
+      <!-- Popular Campus Landmarks Grid -->
+      <div id="locPopularSection" class="loc-popular-section">
+        <span class="section-label">Popular Starting Locations</span>
+        <div id="locLandmarkGrid" class="loc-landmark-grid"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Complete Application Logic -->
   <script src="script.js"></script>
