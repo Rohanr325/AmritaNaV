@@ -2834,6 +2834,8 @@ function haversineDistMeters(lat1, lon1, lat2, lon2) {
 let locationWatchId = null;
 function startLocationWatcher() {
   if (!navigator.geolocation || locationWatchId !== null) return;
+  if (!isSecureOrigin() && window.location.protocol !== 'file:') return;
+
   locationWatchId = navigator.geolocation.watchPosition(
     (pos) => {
       const distFromCampus = haversineDistMeters(pos.coords.latitude, pos.coords.longitude, CAMPUS_GPS.lat, CAMPUS_GPS.lng);
@@ -2842,9 +2844,9 @@ function startLocationWatcher() {
       }
     },
     (err) => {
-      console.warn('WatchPosition notification:', err.message);
+      console.warn('WatchPosition notification:', err.code, err.message);
     },
-    { enableHighAccuracy: true, maximumAge: 6000 }
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 }
   );
 }
 
@@ -2940,51 +2942,174 @@ function fallbackToCampusEntrance() {
   }
 }
 
+function isSecureOrigin() {
+  if (window.isSecureContext) return true;
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+}
+
 function showPermissionNotice(reason = 'denied') {
   const notice = document.getElementById('locPermissionNotice');
   const title = document.getElementById('locNoticeTitle');
   const desc = document.getElementById('locNoticeDesc');
+  const btnHttps = document.getElementById('btnSwitchHttps');
+  const btnRetry = document.getElementById('btnRetryGPSLoc');
+  const helpBox = document.getElementById('locNoticeHelp');
+  const helpBody = document.getElementById('locNoticeHelpBody');
+  const helpDetails = document.getElementById('locNoticeHelpDetails');
   if (!notice) return;
 
   notice.style.display = 'block';
+  notice.className = 'loc-permission-notice ' + reason;
 
-  if (reason === 'file_protocol') {
+  if (btnHttps) btnHttps.style.display = 'none';
+  if (btnRetry) btnRetry.style.display = 'none';
+  if (helpBox) helpBox.style.display = 'none';
+  if (helpDetails) helpDetails.open = false;
+
+  const currentHost = window.location.hostname || 'localhost';
+
+  if (reason === 'insecure_origin') {
+    if (title) title.textContent = 'Mobile Security: HTTPS Required for GPS';
+    if (desc) {
+      desc.innerHTML = `Modern mobile browsers (Chrome on Android, Safari on iOS) <strong>strictly block GPS sensors</strong> on plain HTTP connections (<code>${window.location.protocol}//${currentHost}</code>). Location permission cannot be granted over insecure HTTP.`;
+    }
+    if (btnHttps) {
+      const httpsUrl = `https://${currentHost}:8443${window.location.pathname}`;
+      btnHttps.href = httpsUrl;
+      btnHttps.style.display = 'inline-flex';
+      btnHttps.innerHTML = `🔒 Switch to Secure HTTPS (:8443)`;
+    }
+    if (helpBox && helpBody) {
+      helpBox.style.display = 'block';
+      if (helpDetails) helpDetails.open = true;
+      helpBody.innerHTML = `
+        <strong>3 Ways to enable GPS on Android / Phone:</strong>
+        <ol>
+          <li><strong>Option 1 (Recommended):</strong> Tap the green button above to switch to <code>https://${currentHost}:8443</code>. On first load, tap <em>Advanced &rarr; Proceed to ${currentHost} (unsafe)</em> to accept the self-signed cert. Full GPS will work!</li>
+          <li><strong>Option 2 (Chrome Flag):</strong> Open <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code> on your phone, add <code>http://${currentHost}:${window.location.port || '8000'}</code>, enable it, and relaunch Chrome.</li>
+          <li><strong>Option 3 (No HTTPS Needed):</strong> Tap <strong>"Simulate at Main Entrance"</strong> or <strong>"Pinpoint on Map"</strong> below to test navigation immediately!</li>
+        </ol>`;
+    }
+  } else if (reason === 'file_protocol') {
     if (title) title.textContent = 'Browser Security: file:// Protocol';
-    if (desc) desc.innerHTML = 'Chrome and Edge block live GPS sensors when opening HTML directly from a folder (<code>file://</code>). Run via a local server (<code>http://localhost:8000</code>) or tap below to test with simulated campus GPS!';
+    if (desc) {
+      desc.innerHTML = `Chrome and Edge block live GPS sensors when opening HTML files directly from device storage (<code>file://</code>). Run via a local web server (<code>http://localhost:8000</code> or <code>https://${currentHost}:8443</code>) or tap below to test with simulated coordinates!`;
+    }
+    if (btnRetry) btnRetry.style.display = 'inline-flex';
+  } else if (reason === 'location_disabled') {
+    if (title) title.textContent = 'Device Location (GPS) Is Turned Off';
+    if (desc) {
+      desc.innerHTML = 'Your Android phone or tablet has the system-wide <strong>Location</strong> sensor turned off in Android settings.';
+    }
+    if (btnRetry) btnRetry.style.display = 'inline-flex';
+    if (helpBox && helpBody) {
+      helpBox.style.display = 'block';
+      if (helpDetails) helpDetails.open = true;
+      helpBody.innerHTML = `
+        <strong>How to turn Location ON:</strong>
+        <ol>
+          <li>Swipe down from the top of your Android screen to open <strong>Quick Settings</strong>.</li>
+          <li>Tap the <strong>Location / GPS</strong> tile to turn it ON.</li>
+          <li>Tap <strong>🔄 Retry GPS Fix</strong> below!</li>
+        </ol>`;
+    }
   } else if (reason === 'denied') {
-    if (title) title.textContent = 'Location Permission Was Blocked';
-    if (desc) desc.innerHTML = 'Location permission is currently blocked in your browser. To unblock: click the <strong>Tune / Lock icon (⚙️)</strong> to the left of the URL bar &rarr; set <strong>Location to "Allow"</strong> &rarr; reload. Or tap below to simulate your location immediately!';
+    if (title) title.textContent = 'Location Permission Was Denied';
+    if (desc) {
+      desc.innerHTML = 'Location permission is currently blocked in your browser for this site. Allow location in site settings to use live GPS.';
+    }
+    if (btnRetry) btnRetry.style.display = 'inline-flex';
+    if (helpBox && helpBody) {
+      helpBox.style.display = 'block';
+      helpBody.innerHTML = `
+        <strong>How to unblock on Android Chrome:</strong>
+        <ol>
+          <li>Tap the <strong>Tune / Lock icon (⚙️ or 🔒)</strong> to the left of the URL in the address bar.</li>
+          <li>Tap <strong>Permissions</strong> &rarr; tap <strong>Location</strong> &rarr; select <strong>Allow</strong>.</li>
+          <li>Tap <strong>🔄 Retry GPS Fix</strong> or reload this page.</li>
+        </ol>`;
+    }
+  } else if (reason === 'timeout') {
+    if (title) title.textContent = 'Indoor GPS Signal Weak (Timed Out)';
+    if (desc) {
+      desc.innerHTML = 'Could not acquire satellite fix within timeout. GPS signals are heavily attenuated by concrete ceilings indoors. We have defaulted your position to the Main Entrance.';
+    }
+    if (btnRetry) btnRetry.style.display = 'inline-flex';
   } else {
     if (title) title.textContent = 'GPS Signal Unavailable';
-    if (desc) desc.innerHTML = 'Could not acquire satellite fix (low indoor signal or timed out). Tap below to simulate your location at the Main Entrance or pinpoint anywhere on the map.';
+    if (desc) {
+      desc.innerHTML = 'Could not determine position from device sensors. Tap below to simulate your location at the Main Entrance or pinpoint anywhere on the map.';
+    }
+    if (btnRetry) btnRetry.style.display = 'inline-flex';
   }
 }
 
 function handleAutoDetectGPS(userInitiated = false) {
+  const isExplicit = (typeof userInitiated === 'boolean') ? userInitiated : true;
   const fab = document.getElementById('myLocationFabBtn');
   if (fab) fab.classList.add('tracking');
 
-  // Detect file:// protocol restriction in modern browsers
+  // Check 1: file:// protocol restriction
   if (window.location.protocol === 'file:') {
     if (fab) fab.classList.remove('tracking');
     console.warn('Note: Browsers block Geolocation API under file:// protocol. Local server recommended.');
-    showToast('Browsers block GPS on file://. Opening location helper...');
-    openLocationModal();
-    showPermissionNotice('file_protocol');
+    if (isExplicit) {
+      showToast('Browsers block GPS on file://. Opening location helper...');
+      openLocationModal();
+      showPermissionNotice('file_protocol');
+    }
     return;
   }
 
+  // Check 2: Insecure context over LAN/mobile HTTP
+  if (!isSecureOrigin()) {
+    if (fab) fab.classList.remove('tracking');
+    console.warn('Note: Geolocation requires a Secure Context (HTTPS or localhost). Insecure origin:', window.location.origin);
+    if (isExplicit) {
+      showToast('⚠️ Mobile browsers require HTTPS for GPS. Opening setup guide...');
+      openLocationModal();
+      showPermissionNotice('insecure_origin');
+    }
+    return;
+  }
+
+  // Check 3: Geolocation API availability
   if (!navigator.geolocation) {
     if (fab) fab.classList.remove('tracking');
-    showToast('GPS geolocation is not supported on this device/browser.');
-    openLocationModal();
-    showPermissionNotice('unavailable');
+    if (isExplicit) {
+      showToast('GPS geolocation is not supported on this device/browser.');
+      openLocationModal();
+      showPermissionNotice('unavailable');
+    }
     return;
   }
 
-  if (userInitiated) {
-    showToast('Requesting GPS location...');
+  if (isExplicit) {
+    showToast('🛰️ Acquiring GPS position (satellite & network)...');
   }
+
+  // Two-stage acquisition:
+  // Stage 1: High Accuracy GPS (16 seconds timeout for Android OS dialog + satellite lock)
+  // Stage 2: Fallback to Network Provider (Cell/Wi-Fi, 10 seconds timeout) if Stage 1 times out indoors
+  const runStage2Network = () => {
+    console.info('GPS Stage 1 timed out; attempting Stage 2 network/fused location fallback...');
+    if (isExplicit) {
+      showToast('Satellite signal low indoors. Trying network positioning...');
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (fab) fab.classList.remove('tracking');
+        processGPSCoords(pos.coords, false);
+        closeLocationModal();
+        startLocationWatcher();
+      },
+      (finalErr) => {
+        handleGeolocationError(finalErr, isExplicit, fab);
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+    );
+  };
 
   navigator.geolocation.getCurrentPosition(
     (pos) => {
@@ -2994,22 +3119,67 @@ function handleAutoDetectGPS(userInitiated = false) {
       startLocationWatcher();
     },
     (err) => {
-      if (fab) fab.classList.remove('tracking');
-      console.warn('Geolocation error / denied:', err.code, err.message);
+      // If error is TIMEOUT (code 3) or POSITION_UNAVAILABLE (code 2), attempt Stage 2
+      const msg = (err.message || '').toLowerCase();
+      const isSystemDisabled = msg.includes('turned off') || msg.includes('disabled') || msg.includes('service disabled');
+      if ((err.code === 3 || err.code === 2) && !isSystemDisabled) {
+        runStage2Network();
+      } else {
+        handleGeolocationError(err, isExplicit, fab);
+      }
+    },
+    { enableHighAccuracy: true, timeout: 16000, maximumAge: 15000 }
+  );
+}
 
-      if (err.code === 1) { // PERMISSION_DENIED
-        showToast('Location permission denied. Tap to simulate or allow in settings.');
+function handleGeolocationError(err, isExplicit, fab) {
+  if (fab) fab.classList.remove('tracking');
+  console.warn('Geolocation error / denied:', err.code, err.message);
+  const msg = (err.message || '').toLowerCase();
+
+  if (err.code === 1) { // PERMISSION_DENIED
+    if (!isSecureOrigin()) {
+      showToast('⚠️ Mobile GPS blocked: Insecure HTTP. HTTPS required.');
+      if (isExplicit) {
+        openLocationModal();
+        showPermissionNotice('insecure_origin');
+      }
+    } else {
+      showToast('Location permission denied. Tap to simulate or allow in settings.');
+      if (isExplicit) {
         openLocationModal();
         showPermissionNotice('denied');
-      } else {
-        showToast('Indoor GPS signal low. Defaulted to Main Entrance (Reception).');
-        fallbackToCampusEntrance();
+      }
+    }
+  } else if (err.code === 2) { // POSITION_UNAVAILABLE
+    if (msg.includes('turned off') || msg.includes('disabled') || msg.includes('service disabled')) {
+      showToast('⚠️ Phone GPS is turned off. Turn on Location in settings.');
+      if (isExplicit) {
+        openLocationModal();
+        showPermissionNotice('location_disabled');
+      }
+    } else {
+      showToast('Indoor GPS signal low. Defaulted to Main Entrance (Reception).');
+      fallbackToCampusEntrance();
+      if (isExplicit) {
         openLocationModal();
         showPermissionNotice('unavailable');
       }
-    },
-    { enableHighAccuracy: true, timeout: 9000, maximumAge: 0 }
-  );
+    }
+  } else if (err.code === 3) { // TIMEOUT
+    showToast('Indoor GPS fix timed out. Defaulted to Main Entrance (Reception).');
+    fallbackToCampusEntrance();
+    if (isExplicit) {
+      openLocationModal();
+      showPermissionNotice('timeout');
+    }
+  } else {
+    fallbackToCampusEntrance();
+    if (isExplicit) {
+      openLocationModal();
+      showPermissionNotice('unavailable');
+    }
+  }
 }
 
 // ==========================================================================
@@ -3279,6 +3449,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const btnRetryGps = document.getElementById('btnRetryGPSLoc');
+  if (btnRetryGps) {
+    btnRetryGps.addEventListener('click', () => {
+      handleAutoDetectGPS(true);
+    });
+  }
+
   const btnPinpointNotice = document.getElementById('btnPinpointFromNotice');
   if (btnPinpointNotice) {
     btnPinpointNotice.addEventListener('click', enablePinpointMode);
@@ -3377,10 +3554,22 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('Could not load saved location', err);
   }
 
-  // Auto-request location permission like Google Maps on initial load
+  // Auto-request location permission like Google Maps on initial load if permitted or secure
   setTimeout(() => {
     if (!appState.userLocation && !appState.currentRoute) {
-      handleAutoDetectGPS(false);
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' }).then(res => {
+          if (res.state === 'granted') {
+            handleAutoDetectGPS(false);
+          }
+        }).catch(() => {
+          if (isSecureOrigin()) {
+            handleAutoDetectGPS(false);
+          }
+        });
+      } else if (isSecureOrigin()) {
+        handleAutoDetectGPS(false);
+      }
     }
   }, 500);
 });

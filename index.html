@@ -481,26 +481,38 @@
         </button>
       </header>
 
-      <!-- Permission Denied / File Protocol Notice Banner -->
+      <!-- Location Diagnostics & Permission Notice Banner -->
       <div id="locPermissionNotice" class="loc-permission-notice" style="display: none;">
         <div class="loc-notice-header">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg id="locNoticeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
           <span id="locNoticeTitle" class="loc-notice-title">Location Permission Blocked</span>
         </div>
-        <p id="locNoticeDesc" class="loc-notice-desc">
-          Your browser blocked GPS access or is running under <code>file://</code> protocol. Tap <strong>Simulate Location</strong> to test with live demo coordinates, or allow location in your browser site settings.
-        </p>
-        <div class="loc-notice-actions">
+        <div id="locNoticeDesc" class="loc-notice-desc">
+          Your browser blocked GPS access or requires a secure HTTPS connection.
+        </div>
+        <div id="locNoticeActions" class="loc-notice-actions">
+          <a id="btnSwitchHttps" class="loc-notice-btn action-https" style="display: none;" href="#" target="_self">
+            🔒 Switch to Secure HTTPS (:8443)
+          </a>
+          <button id="btnRetryGPSLoc" class="loc-notice-btn retry" style="display: none;">
+            🔄 Retry GPS Fix
+          </button>
           <button id="btnSimulateCampusLoc" class="loc-notice-btn primary">
             📍 Simulate at Main Entrance
           </button>
           <button id="btnPinpointFromNotice" class="loc-notice-btn secondary">
             🎯 Pinpoint on Map
           </button>
+        </div>
+        <div id="locNoticeHelp" class="loc-notice-help" style="display: none;">
+          <details id="locNoticeHelpDetails">
+            <summary id="locNoticeHelpSummary">📱 Mobile & Phone Setup Guide</summary>
+            <div id="locNoticeHelpBody" class="loc-help-body"></div>
+          </details>
         </div>
       </div>
 
